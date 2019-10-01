@@ -5,7 +5,6 @@
 
 using System;
 using System.Linq;
-using System.Collections.Generic;
 using magic.node;
 using magic.http.contracts;
 using magic.node.extensions;
@@ -13,16 +12,29 @@ using magic.signals.contracts;
 
 namespace magic.lambda.http
 {
-    [Slot(Name = "http.put.json")]
-    public class HttpPutJson : ISlot
+    // TODO: Implement support for generic headers once a release of magic.http has been created.
+    /// <summary>
+    /// Invokes the HTTP PUT verb towards some resource.
+    /// </summary>
+    [Slot(Name = "http.put")]
+    public class HttpPut : ISlot
     {
         readonly IHttpClient _httpClient;
 
-        public HttpPutJson(IHttpClient httpClient)
+        /// <summary>
+        /// Creates a new instance of your class.
+        /// </summary>
+        /// <param name="httpClient">HTTP client to use for invocation.</param>
+        public HttpPut(IHttpClient httpClient)
         {
             _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         }
 
+        /// <summary>
+        /// Implementation of your slot.
+        /// </summary>
+        /// <param name="signaler">Signale rthat raised the signal.</param>
+        /// <param name="input">Arguments to your slot.</param>
         public void Signal(ISignaler signaler, Node input)
         {
             if (input.Children.Count() > 2 || input.Children.Any(x => x.Name != "token" && x.Name != "payload"))
@@ -30,9 +42,9 @@ namespace magic.lambda.http
 
             var url = input.GetEx<string>();
             var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
-            var payload = input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<string>();
+            var payload = input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<string>() ??
+                throw new ArgumentNullException("No [payload] supplied to [http.put]");
 
-            // Notice, to sanity check the result we still want to roundtrip through a JToken result.
             input.Value = _httpClient.PutAsync<string, string>(url, payload, token).Result;
             input.Clear();
         }

@@ -19,15 +19,6 @@ namespace magic.lambda.http.tests
 {
     public static class Common
     {
-        [Slot(Name = "foo")]
-        public class FooSlot : ISlot
-        {
-            public void Signal(ISignaler signaler, Node input)
-            {
-                input.Value = "OK";
-            }
-        }
-
         static public Node Evaluate(string hl)
         {
             var services = Initialize();
@@ -35,12 +26,6 @@ namespace magic.lambda.http.tests
             var signaler = services.GetService(typeof(ISignaler)) as ISignaler;
             signaler.Signal("eval", lambda);
             return lambda;
-        }
-
-        static public ISignaler GetSignaler()
-        {
-            var services = Initialize();
-            return services.GetService(typeof(ISignaler)) as ISignaler;
         }
 
         #region [ -- Private helper methods -- ]
