@@ -3,12 +3,20 @@
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <PackageId>magic.lambda.http</PackageId>
     <Authors>Thomas Hansen</Authors>
-    <Description>HTTP REST plugin for magic.lambda</Description>
+    <Company>Thomas Hansen</Company>
     <Copyright>Thomas Hansen, thomas@gaiasoul.com</Copyright>
+    <Description>HTTP lambda helpers for Magic.</Description>
     <PackageProjectUrl>https://github.com/polterguy/magic.lambda.http</PackageProjectUrl>
     <PackageLicenseUrl>https://raw.githubusercontent.com/polterguy/magic.lambda.http/master/LICENSE</PackageLicenseUrl>
     <PackageIconUrl>https://polterguy.github.io/favicon.ico</PackageIconUrl>
+    <PackOnBuild>true</PackOnBuild>
+    <PackageVersion>1.1.0</PackageVersion>
+    <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
+    <RepositoryType>git</RepositoryType>
+    <RepositoryUrl>https://github.com/polterguy/magic.lambda.http.git</RepositoryUrl>
+    <PackageTags>http, rest, api, json, web, HttpClient, async</PackageTags>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
