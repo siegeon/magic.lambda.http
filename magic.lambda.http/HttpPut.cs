@@ -45,7 +45,10 @@ namespace magic.lambda.http
             var payload = input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<string>() ??
                 throw new ArgumentNullException("No [payload] supplied to [http.put]");
 
-            input.Value = _httpClient.PutAsync<string, string>(url, payload, token).Result;
+            if (token == null)
+                input.Value = _httpClient.PutAsync<string, string>(url, payload).Result;
+            else
+                input.Value = _httpClient.PutAsync<string, string>(url, payload, token).Result;
             input.Clear();
         }
     }

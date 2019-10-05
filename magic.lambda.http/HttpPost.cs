@@ -45,7 +45,10 @@ namespace magic.lambda.http
                 throw new ArgumentNullException("No [payload] supplied to [http.post]");
 
             // Invoking endpoint, passing in payload, and returning result as value of root node.
-            input.Value = _httpClient.PostAsync<string, string>(url, payload, token).Result;
+            if (token == null)
+                input.Value = _httpClient.PostAsync<string, string>(url, payload).Result;
+            else
+                input.Value = _httpClient.PostAsync<string, string>(url, payload, token).Result;
             input.Clear();
         }
     }

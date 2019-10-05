@@ -7,13 +7,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="magic.http.contracts" Version="1.0.0" />
-    <PackageReference Include="magic.http.services" Version="1.0.0" />
-    <PackageReference Include="magic.lambda" Version="1.0.1" />
-    <PackageReference Include="magic.node" Version="1.0.0" />
-    <PackageReference Include="magic.node.extensions" Version="1.0.0" />
-    <PackageReference Include="magic.signals.contracts" Version="1.0.1" />
-    <PackageReference Include="magic.signals.services" Version="1.0.1" />
     <PackageReference Include="Microsoft.Extensions.Configuration" Version="3.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="3.0.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.2.0" />
