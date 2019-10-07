@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using System.Threading.Tasks;
 using magic.node;
 using magic.http.contracts;
 using magic.node.extensions;
@@ -16,7 +17,7 @@ namespace magic.lambda.http
     /// Invokes the HTTP GET verb towards some resource.
     /// </summary>
     [Slot(Name = "http.get")]
-    public class HttpGet : ISlot
+    public class HttpGet : ISlot, ISlotAsync
     {
         readonly IHttpClient _httpClient;
 
@@ -37,7 +38,7 @@ namespace magic.lambda.http
         public void Signal(ISignaler signaler, Node input)
         {
             if (input.Children.Count() > 1 || input.Children.Any(x => x.Name != "token"))
-                throw new ApplicationException("[http.get] can only handle one [token] child node");
+                throw new ArgumentException("[http.get] can only handle one [token] child node");
 
             var url = input.GetEx<string>();
             var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
@@ -47,6 +48,28 @@ namespace magic.lambda.http
                 input.Value = _httpClient.GetAsync<string>(url).Result;
             else
                 input.Value = _httpClient.GetAsync<string>(url, token).Result;
+            input.Clear();
+        }
+
+        /// <summary>
+        /// Implementation of your slot.
+        /// </summary>
+        /// <param name="signaler">Signaler that raised the signal.</param>
+        /// <param name="input">Arguments to your slot.</param>
+        /// <returns>An awaitable task.</returns>
+        public async Task SignalAsync(ISignaler signaler, Node input)
+        {
+            if (input.Children.Count() > 1 || input.Children.Any(x => x.Name != "token"))
+                throw new ApplicationException("[http.get] can only handle one [token] child node");
+
+            var url = input.GetEx<string>();
+            var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
+
+            // Invoking endpoint and returning result as value of root node.
+            if (token == null)
+                input.Value = await _httpClient.GetAsync<string>(url);
+            else
+                input.Value = await _httpClient.GetAsync<string>(url, token);
             input.Clear();
         }
     }

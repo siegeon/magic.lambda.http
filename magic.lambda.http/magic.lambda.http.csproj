@@ -12,7 +12,7 @@
     <PackageLicenseUrl>https://raw.githubusercontent.com/polterguy/magic.lambda.http/master/LICENSE</PackageLicenseUrl>
     <PackageIconUrl>https://polterguy.github.io/favicon.ico</PackageIconUrl>
     <PackOnBuild>true</PackOnBuild>
-    <PackageVersion>1.1.5</PackageVersion>
+    <PackageVersion>1.1.6</PackageVersion>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/polterguy/magic.lambda.http.git</RepositoryUrl>
@@ -25,7 +25,7 @@
 
   <ItemGroup>
     <PackageReference Include="magic.http" Version="1.1.2" />
-    <PackageReference Include="magic.signals" Version="1.1.5" />
+    <PackageReference Include="magic.signals" Version="1.1.6" />
     <PackageReference Include="magic.node.extensions" Version="1.1.2" />
   </ItemGroup>
 </Project>
