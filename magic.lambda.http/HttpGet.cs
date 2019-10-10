@@ -17,6 +17,7 @@ namespace magic.lambda.http
     /// Invokes the HTTP GET verb towards some resource.
     /// </summary>
     [Slot(Name = "http.get")]
+    [Slot(Name = "wait.http.get")]
     public class HttpGet : ISlot, ISlotAsync
     {
         readonly IHttpClient _httpClient;
