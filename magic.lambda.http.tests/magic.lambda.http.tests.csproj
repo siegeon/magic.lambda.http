@@ -15,8 +15,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="magic.lambda" Version="1.2.1" />
-    <PackageReference Include="magic.signals" Version="1.1.8" />
+    <PackageReference Include="magic.lambda" Version="1.2.2" />
+    <PackageReference Include="magic.signals" Version="1.2.0" />
   </ItemGroup>
 
   <ItemGroup>
