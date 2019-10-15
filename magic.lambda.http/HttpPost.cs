@@ -43,7 +43,7 @@ namespace magic.lambda.http
 
             var url = input.GetEx<string>();
             var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
-            var payload = input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<string>() ?? 
+            var payload = input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<string>() ??
                 throw new ArgumentException("No [payload] supplied to [http.post]");
 
             // Invoking endpoint, passing in payload, and returning result as value of root node.
