@@ -47,7 +47,7 @@ wait.http.get:""https://jsonplaceholder.typicode.com/users/1""
 http.post:""https://jsonplaceholder.typicode.com/posts""
    payload:@""{""""userId"""":1, """"id"""":1}""
 ");
-            Assert.True(lambda.Children.First().Get<string>().Length > 0);
+            Assert.Equal(404, lambda.Children.First().Children.First().Value);
         }
 
         [Fact]

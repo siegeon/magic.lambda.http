@@ -47,11 +47,10 @@ namespace magic.lambda.http
                 throw new ArgumentException("No [payload] supplied to [http.post]");
 
             // Invoking endpoint, passing in payload, and returning result as value of root node.
-            if (token == null)
-                input.Value = _httpClient.PostAsync<string, string>(url, payload).Result;
-            else
-                input.Value = _httpClient.PostAsync<string, string>(url, payload, token).Result;
-            input.Clear();
+            var response = token == null ?
+                _httpClient.PutAsync<string, string>(url, payload).Result :
+                _httpClient.PutAsync<string, string>(url, payload, token).Result;
+            Common.CreateResponse(input, response);
         }
 
         /// <summary>
@@ -71,11 +70,10 @@ namespace magic.lambda.http
                 throw new ArgumentException("No [payload] supplied to [http.post]");
 
             // Invoking endpoint, passing in payload, and returning result as value of root node.
-            if (token == null)
-                input.Value = await _httpClient.PostAsync<string, string>(url, payload);
-            else
-                input.Value = await _httpClient.PostAsync<string, string>(url, payload, token);
-            input.Clear();
+            var response = token == null ?
+                await _httpClient.PostAsync<string, string>(url, payload) :
+                await _httpClient.PostAsync<string, string>(url, payload, token);
+            Common.CreateResponse(input, response);
         }
     }
 }

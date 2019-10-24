@@ -45,11 +45,10 @@ namespace magic.lambda.http
             var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
 
             // Invoking endpoint and returning result as value of root node.
-            if (token == null)
-                input.Value = _httpClient.GetAsync<string>(url).Result;
-            else
-                input.Value = _httpClient.GetAsync<string>(url, token).Result;
-            input.Clear();
+            var response = token == null ?
+                _httpClient.GetAsync<string>(url).Result :
+                _httpClient.GetAsync<string>(url, token).Result;
+            Common.CreateResponse(input, response);
         }
 
         /// <summary>
@@ -67,11 +66,10 @@ namespace magic.lambda.http
             var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
 
             // Invoking endpoint and returning result as value of root node.
-            if (token == null)
-                input.Value = await _httpClient.GetAsync<string>(url);
-            else
-                input.Value = await _httpClient.GetAsync<string>(url, token);
-            input.Clear();
+            var response = token == null ?
+                await _httpClient.GetAsync<string>(url) :
+                await _httpClient.GetAsync<string>(url, token);
+            Common.CreateResponse(input, response);
         }
     }
 }

@@ -46,11 +46,10 @@ namespace magic.lambda.http
             var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
 
             // Invoking endpoint and returning result as value of root node.
-            if (token == null)
-                input.Value = _httpClient.DeleteAsync<string>(url).Result;
-            else
-                input.Value = _httpClient.DeleteAsync<string>(url, token).Result;
-            input.Clear();
+            var response = token == null ?
+                _httpClient.DeleteAsync<string>(url).Result:
+                _httpClient.DeleteAsync<string>(url, token).Result;
+            Common.CreateResponse(input, response);
         }
 
         /// <summary>
@@ -69,11 +68,10 @@ namespace magic.lambda.http
             var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
 
             // Invoking endpoint and returning result as value of root node.
-            if (token == null)
-                input.Value = await _httpClient.DeleteAsync<string>(url);
-            else
-                input.Value = await _httpClient.DeleteAsync<string>(url, token);
-            input.Clear();
+            var response = token == null ?
+                await _httpClient.DeleteAsync<string>(url) :
+                await _httpClient.DeleteAsync<string>(url, token);
+            Common.CreateResponse(input, response);
         }
     }
 }

@@ -47,11 +47,11 @@ namespace magic.lambda.http
             var payload = input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<string>() ??
                 throw new ArgumentException("No [payload] supplied to [http.put]");
 
-            if (token == null)
-                input.Value = _httpClient.PutAsync<string, string>(url, payload).Result;
-            else
-                input.Value = _httpClient.PutAsync<string, string>(url, payload, token).Result;
-            input.Clear();
+            // Invoking endpoint, passing in payload, and returning result as value of root node.
+            var response = token == null ?
+                _httpClient.PutAsync<string, string>(url, payload).Result :
+                _httpClient.PutAsync<string, string>(url, payload, token).Result;
+            Common.CreateResponse(input, response);
         }
 
         /// <summary>
@@ -70,11 +70,13 @@ namespace magic.lambda.http
             var payload = input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<string>() ??
                 throw new ArgumentException("No [payload] supplied to [http.put]");
 
+            // Invoking endpoint, passing in payload, and returning result as value of root node.
+            Response<string> response;
             if (token == null)
-                input.Value = await _httpClient.PutAsync<string, string>(url, payload);
+                response = _httpClient.GetAsync<string>(url).Result;
             else
-                input.Value = await _httpClient.PutAsync<string, string>(url, payload, token);
-            input.Clear();
+                response = _httpClient.GetAsync<string>(url, token).Result;
+            Common.CreateResponse(input, response);
         }
     }
 }
