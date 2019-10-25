@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
 using magic.node.extensions;
+using Newtonsoft.Json.Linq;
 
 namespace magic.lambda.http.tests
 {
@@ -19,7 +20,13 @@ namespace magic.lambda.http.tests
             var lambda = Common.Evaluate(@"
 http.get:""https://jsonplaceholder.typicode.com/users/1""
 ");
-            Assert.True(lambda.Children.First().Get<string>().Length > 0);
+            Assert.Equal(200, lambda.Children.First().Value);
+            Assert.Equal(2, lambda.Children.First().Children.Count());
+            Assert.Equal("headers", lambda.Children.First().Children.First().Name);
+            Assert.True(lambda.Children.First().Children.First().Children.Count() > 5);
+            Assert.Equal("content", lambda.Children.First().Children.Skip(1).First().Name);
+            var json = JObject.Parse(lambda.Children.First().Children.Skip(1).First().Get<string>());
+            Assert.NotNull(json);
         }
 
         [Fact]
@@ -37,7 +44,7 @@ http.get:""https://jsonplaceholder.typicode.com/users/1""
             var lambda = await Common.EvaluateAsync(@"
 wait.http.get:""https://jsonplaceholder.typicode.com/users/1""
 ");
-            Assert.True(lambda.Children.First().Get<string>().Length > 0);
+            Assert.Equal(200, lambda.Children.First().Value);
         }
 
         [Fact]
@@ -47,7 +54,7 @@ wait.http.get:""https://jsonplaceholder.typicode.com/users/1""
 http.post:""https://jsonplaceholder.typicode.com/posts""
    payload:@""{""""userId"""":1, """"id"""":1}""
 ");
-            Assert.Equal(404, lambda.Children.First().Children.First().Value);
+            Assert.Equal(404, lambda.Children.First().Value);
         }
 
         [Fact]
@@ -65,7 +72,7 @@ http.post:""https://jsonplaceholder.typicode.com/posts""
 wait.http.post:""https://jsonplaceholder.typicode.com/posts""
    payload:@""{""""userId"""":1, """"id"""":1}""
 ");
-            Assert.True(lambda.Children.First().Get<string>().Length > 0);
+            Assert.Equal(201, lambda.Children.First().Value);
         }
 
         [Fact]
@@ -75,7 +82,7 @@ wait.http.post:""https://jsonplaceholder.typicode.com/posts""
 http.put:""https://jsonplaceholder.typicode.com/posts/1""
    payload:@""{""""userId"""":1, """"id"""":1}""
 ");
-            Assert.True(lambda.Children.First().Get<string>().Length > 0);
+            Assert.Equal(200, lambda.Children.First().Value);
         }
 
         [Fact]
@@ -93,7 +100,7 @@ http.put:""https://jsonplaceholder.typicode.com/posts/1""
 wait.http.put:""https://jsonplaceholder.typicode.com/posts/1""
    payload:@""{""""userId"""":1, """"id"""":1}""
 ");
-            Assert.True(lambda.Children.First().Get<string>().Length > 0);
+            Assert.Equal(200, lambda.Children.First().Value);
         }
 
         [Fact]
@@ -102,7 +109,7 @@ wait.http.put:""https://jsonplaceholder.typicode.com/posts/1""
             var lambda = Common.Evaluate(@"
 http.delete:""https://jsonplaceholder.typicode.com/posts/1""
 ");
-            Assert.True(lambda.Children.First().Get<string>().Length > 0);
+            Assert.Equal(200, lambda.Children.First().Value);
         }
 
         [Fact]
@@ -120,7 +127,7 @@ http.delete:""https://jsonplaceholder.typicode.com/posts/1""
             var lambda = await Common.EvaluateAsync(@"
 wait.http.delete:""https://jsonplaceholder.typicode.com/posts/1""
 ");
-            Assert.True(lambda.Children.First().Get<string>().Length > 0);
+            Assert.Equal(200, lambda.Children.First().Value);
         }
     }
 }

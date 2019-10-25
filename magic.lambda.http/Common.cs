@@ -3,6 +3,7 @@
  * See the enclosed LICENSE file for details.
  */
 
+using System.Linq;
 using magic.node;
 using magic.http.contracts;
 
@@ -16,21 +17,9 @@ namespace magic.lambda.http
         public static void CreateResponse(Node input, Response<string> response)
         {
             input.Clear();
-            input.Add(new Node("status", (int)response.Status));
-            foreach (var idxHeader in response.Headers)
-            {
-                input.Add(new Node(idxHeader.Key, string.Join(";", idxHeader.Value)));
-            }
-            if ((int)response.Status >= 200 && (int)response.Status < 400)
-            {
-                // Success
-                input.Value = response.Content;
-            }
-            else
-            {
-                input.Value = null;
-                input.Add(new Node("error", response.Error));
-            }
+            input.Value = (int)response.Status;
+            input.Add(new Node("headers", null, response.Headers.Select(x => new Node(x.Key, x.Value))));
+            input.Add(new Node("content", response.Content));
         }
     }
 }
