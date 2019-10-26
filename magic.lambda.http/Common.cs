@@ -14,6 +14,10 @@ namespace magic.lambda.http
      */
     internal static class Common
     {
+        /*
+         * Creates a common lambda structure out of an HTTP Response, adding
+         * the HTTP headers, status code, and content into the lambda structure.
+         */
         public static void CreateResponse(Node input, Response<string> response)
         {
             input.Clear();

@@ -71,11 +71,9 @@ namespace magic.lambda.http
                 throw new ArgumentException("No [payload] supplied to [http.put]");
 
             // Invoking endpoint, passing in payload, and returning result as value of root node.
-            Response<string> response;
-            if (token == null)
-                response = _httpClient.GetAsync<string>(url).Result;
-            else
-                response = _httpClient.GetAsync<string>(url, token).Result;
+            var response = token == null ?
+                await _httpClient.PutAsync<string, string>(url, payload) :
+                await _httpClient.PutAsync<string, string>(url, payload, token);
             Common.CreateResponse(input, response);
         }
     }
