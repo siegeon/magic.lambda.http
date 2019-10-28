@@ -38,17 +38,19 @@ namespace magic.lambda.http
         /// <param name="input">Arguments to your slot.</param>
         public void Signal(ISignaler signaler, Node input)
         {
-            if (input.Children.Count() > 2 || input.Children.Any(x => x.Name != "token" && x.Name != "payload"))
-                throw new ArgumentException("[http.post] can only handle one [token] and one [payload] child node");
+            // Sanity checking input arguments.
+            Common.SanityCheckInput(input, true);
 
             var url = input.GetEx<string>();
             var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
             var payload = input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<string>() ??
                 throw new ArgumentException("No [payload] supplied to [http.post]");
+            var headers = input.Children.FirstOrDefault(x => x.Name == "headers")?.Children
+                .ToDictionary(x1 => x1.Name, x2 => x2.GetEx<string>());
 
             // Invoking endpoint, passing in payload, and returning result as value of root node.
             var response = token == null ?
-                _httpClient.PutAsync<string, string>(url, payload).Result :
+                _httpClient.PutAsync<string, string>(url, payload, headers).Result :
                 _httpClient.PutAsync<string, string>(url, payload, token).Result;
             Common.CreateResponse(input, response);
         }
@@ -61,17 +63,19 @@ namespace magic.lambda.http
         /// <returns>An awaitable task.</returns>
         public async Task SignalAsync(ISignaler signaler, Node input)
         {
-            if (input.Children.Count() > 2 || input.Children.Any(x => x.Name != "token" && x.Name != "payload"))
-                throw new ApplicationException("[http.post] can only handle one [token] and one [payload] child node");
+            // Sanity checking input arguments.
+            Common.SanityCheckInput(input, true);
 
             var url = input.GetEx<string>();
             var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
             var payload = input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<string>() ??
                 throw new ArgumentException("No [payload] supplied to [http.post]");
+            var headers = input.Children.FirstOrDefault(x => x.Name == "headers")?.Children
+                .ToDictionary(x1 => x1.Name, x2 => x2.GetEx<string>());
 
             // Invoking endpoint, passing in payload, and returning result as value of root node.
             var response = token == null ?
-                await _httpClient.PostAsync<string, string>(url, payload) :
+                await _httpClient.PostAsync<string, string>(url, payload, headers) :
                 await _httpClient.PostAsync<string, string>(url, payload, token);
             Common.CreateResponse(input, response);
         }

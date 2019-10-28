@@ -38,16 +38,18 @@ namespace magic.lambda.http
         /// <param name="input">Arguments to your slot.</param>
         public void Signal(ISignaler signaler, Node input)
         {
-            if (input.Children.Count() > 1 || input.Children.Any(x => x.Name != "token"))
-                throw new ArgumentException("[http.delete] can only handle one [token] child node");
+            // Sanity checking input arguments.
+            Common.SanityCheckInput(input);
 
             // Retrieving URL and (optional) token.
             var url = input.GetEx<string>();
             var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
+            var headers = input.Children.FirstOrDefault(x => x.Name == "headers")?.Children
+                .ToDictionary(x1 => x1.Name, x2 => x2.GetEx<string>());
 
             // Invoking endpoint and returning result as value of root node.
             var response = token == null ?
-                _httpClient.DeleteAsync<string>(url).Result:
+                _httpClient.DeleteAsync<string>(url, headers).Result:
                 _httpClient.DeleteAsync<string>(url, token).Result;
             Common.CreateResponse(input, response);
         }
@@ -60,16 +62,18 @@ namespace magic.lambda.http
         /// <returns>An awaitable task.</returns>
         public async Task SignalAsync(ISignaler signaler, Node input)
         {
-            if (input.Children.Count() > 1 || input.Children.Any(x => x.Name != "token"))
-                throw new ApplicationException("[http.delete] can only handle one [token] child node");
+            // Sanity checking input arguments.
+            Common.SanityCheckInput(input);
 
             // Retrieving URL and (optional) token.
             var url = input.GetEx<string>();
             var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
+            var headers = input.Children.FirstOrDefault(x => x.Name == "headers")?.Children
+                .ToDictionary(x1 => x1.Name, x2 => x2.GetEx<string>());
 
             // Invoking endpoint and returning result as value of root node.
             var response = token == null ?
-                await _httpClient.DeleteAsync<string>(url) :
+                await _httpClient.DeleteAsync<string>(url, headers) :
                 await _httpClient.DeleteAsync<string>(url, token);
             Common.CreateResponse(input, response);
         }

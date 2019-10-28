@@ -38,15 +38,17 @@ namespace magic.lambda.http
         /// <param name="input">Arguments to your slot.</param>
         public void Signal(ISignaler signaler, Node input)
         {
-            if (input.Children.Count() > 1 || input.Children.Any(x => x.Name != "token"))
-                throw new ArgumentException("[http.get] can only handle one [token] child node");
+            // Sanity checking input arguments.
+            Common.SanityCheckInput(input);
 
             var url = input.GetEx<string>();
             var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
+            var headers = input.Children.FirstOrDefault(x => x.Name == "headers")?.Children
+                .ToDictionary(x1 => x1.Name, x2 => x2.GetEx<string>());
 
             // Invoking endpoint and returning result as value of root node.
             var response = token == null ?
-                _httpClient.GetAsync<string>(url).Result :
+                _httpClient.GetAsync<string>(url, headers).Result :
                 _httpClient.GetAsync<string>(url, token).Result;
             Common.CreateResponse(input, response);
         }
@@ -59,15 +61,17 @@ namespace magic.lambda.http
         /// <returns>An awaitable task.</returns>
         public async Task SignalAsync(ISignaler signaler, Node input)
         {
-            if (input.Children.Count() > 1 || input.Children.Any(x => x.Name != "token"))
-                throw new ApplicationException("[http.get] can only handle one [token] child node");
+            // Sanity checking input arguments.
+            Common.SanityCheckInput(input);
 
             var url = input.GetEx<string>();
             var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
+            var headers = input.Children.FirstOrDefault(x => x.Name == "headers")?.Children
+                .ToDictionary(x1 => x1.Name, x2 => x2.GetEx<string>());
 
             // Invoking endpoint and returning result as value of root node.
             var response = token == null ?
-                await _httpClient.GetAsync<string>(url) :
+                await _httpClient.GetAsync<string>(url, headers) :
                 await _httpClient.GetAsync<string>(url, token);
             Common.CreateResponse(input, response);
         }
