@@ -48,6 +48,37 @@ wait.http.get:""https://jsonplaceholder.typicode.com/users/1""
         }
 
         [Fact]
+        public void GetWithHeaders()
+        {
+            var lambda = Common.Evaluate(@"
+http.get:""https://jsonplaceholder.typicode.com/users/1""
+   headers
+      Foo:Bar");
+            Assert.Equal(200, lambda.Children.First().Value);
+            Assert.Equal(2, lambda.Children.First().Children.Count());
+            Assert.Equal("headers", lambda.Children.First().Children.First().Name);
+            Assert.True(lambda.Children.First().Children.First().Children.Count() > 5);
+            Assert.Equal("content", lambda.Children.First().Children.Skip(1).First().Name);
+            var json = JObject.Parse(lambda.Children.First().Children.Skip(1).First().Get<string>());
+            Assert.NotNull(json);
+        }
+
+        [Fact]
+        public void GetWithToken()
+        {
+            var lambda = Common.Evaluate(@"
+http.get:""https://jsonplaceholder.typicode.com/users/1""
+   token:foo-bar");
+            Assert.Equal(200, lambda.Children.First().Value);
+            Assert.Equal(2, lambda.Children.First().Children.Count());
+            Assert.Equal("headers", lambda.Children.First().Children.First().Name);
+            Assert.True(lambda.Children.First().Children.First().Children.Count() > 5);
+            Assert.Equal("content", lambda.Children.First().Children.Skip(1).First().Name);
+            var json = JObject.Parse(lambda.Children.First().Children.Skip(1).First().Get<string>());
+            Assert.NotNull(json);
+        }
+
+        [Fact]
         public void PostJson()
         {
             var lambda = Common.Evaluate(@"
