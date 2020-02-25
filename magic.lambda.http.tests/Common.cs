@@ -34,7 +34,7 @@ namespace magic.lambda.http.tests
             var services = Initialize();
             var lambda = new Parser(hl).Lambda();
             var signaler = services.GetService(typeof(ISignaler)) as ISignaler;
-            await signaler.SignalAsync("eval", lambda);
+            await signaler.SignalAsync("wait.eval", lambda);
             return lambda;
         }
 
