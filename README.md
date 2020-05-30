@@ -17,7 +17,8 @@ a `Bearer Authorization` token to the endpoint, in the HTTP Authorization header
 Notice, if you want to have more control over your HTTP request, you can also explicitly add your own
 **[header]** collection, which will become the HTTP request's headers, where the header name is the name
 of the node, and its value is the value of the node. Below is a simple example of retrieving the document
-foud at the specified URL, using a simple GET HTTP request, without a **[token]** or **[header]** collection.
+found at the specified URL, using a simple GET HTTP request, without neither a **[token]** nor **[header]**
+collection.
 
 ```
 http.get:"https://google.com"
