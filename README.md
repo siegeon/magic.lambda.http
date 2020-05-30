@@ -11,8 +11,12 @@ Provides HTTP REST capabilities for [Magic](https://github.com/polterguy/magic).
 * __[http.put]__ - Puts some resources to some URL using the HTTP PUT verb.
 
 The __[http.put]__ and the __[http.post]__ slots requires you to provide a __[payload]__, which will be pass to the
-endpoint as a string. All 4 endpoints can (optionally) take a __[token]__ arguments, which will be transferred as a `Bearer Authorization`
-token to the endpoint, in the HTTP Authorization header of your request.
+endpoint as a string. All 4 endpoints can (optionally) take a __[token]__ arguments, which will be transferred as
+a `Bearer Authorization` token to the endpoint, in the HTTP Authorization header of your request.
+
+Notice, if you want to have more control over your HTTP request, you can also explicitly add your own
+**[header]** collection, which will become the HTTP request's headers, where the header name is the name
+of the node, and its value is the value of the node.
 
 ```
 http.get:"https://google.com"
