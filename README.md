@@ -14,6 +14,10 @@ The __[http.put]__ and the __[http.post]__ slots requires you to provide a __[pa
 endpoint as s string. All 4 endpoints can (optionally) take a __[token]__ arguments, which will be transferred as a `Bearer Authorization`
 token to the endpoint, in the HTTP Authorization header of your request.
 
+```
+http.get:"https://google.com"
+```
+
 ## License
 
 Although most of Magic's source code is publicly available, Magic is _not_ Open Source or Free Software.
