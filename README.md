@@ -3,7 +3,7 @@
 
 [![Build status](https://travis-ci.org/polterguy/magic.lambda.http.svg?master)](https://travis-ci.org/polterguy/magic.lambda.http)
 
-Provides HTTP REST capabilities for [Magic](https://github.com/polterguy/magic). More specifically it provdes 4 slots.
+Provides HTTP REST capabilities for [Magic](https://github.com/polterguy/magic). More specifically it provides 4 slots.
 
 * __[http.get]__ - Returns some resource using the HTTP GET verb towards the specified URL.
 * __[http.delete]__ - Deletes some resource using the HTTP DELETE verb.
