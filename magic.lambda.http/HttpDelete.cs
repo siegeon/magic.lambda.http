@@ -49,8 +49,8 @@ namespace magic.lambda.http
 
             // Invoking endpoint and returning result as value of root node.
             var response = token == null ?
-                _httpClient.DeleteAsync<string>(url, headers).Result:
-                _httpClient.DeleteAsync<string>(url, token).Result;
+                _httpClient.DeleteAsync<string>(url, headers).GetAwaiter().GetResult():
+                _httpClient.DeleteAsync<string>(url, token).GetAwaiter().GetResult();
             Common.CreateResponse(input, response);
         }
 
