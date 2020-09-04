@@ -28,7 +28,7 @@ namespace magic.lambda.http
         /// <param name="httpClient">HTTP client to use for invocation.</param>
         public HttpDelete(IHttpClient httpClient)
         {
-            _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
+            _httpClient = httpClient;
         }
 
         /// <summary>
