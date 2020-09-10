@@ -19,7 +19,7 @@ namespace magic.lambda.http
         /// Creates a new instance of your class.
         /// </summary>
         /// <param name="httpClient">HTTP client to use for invocation.</param>
-        public HttpBase(IHttpClient httpClient)
+        protected HttpBase(IHttpClient httpClient)
         {
             HttpClient = httpClient;
         }
@@ -50,6 +50,11 @@ namespace magic.lambda.http
             await Implementation(input);
         }
 
+        /// <summary>
+        /// Abstract implementation method, assumed overridden in derived class.
+        /// </summary>
+        /// <param name="input">Arguments parametrizing the underlaying HTTP request.</param>
+        /// <returns>Awaitable task.</returns>
         protected abstract Task Implementation(Node input);
     }
 }
