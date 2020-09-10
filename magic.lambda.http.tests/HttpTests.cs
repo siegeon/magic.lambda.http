@@ -31,6 +31,46 @@ http.get:""https://jsonplaceholder.typicode.com/users/1""
         }
 
         [Fact]
+        public void Throws_01()
+        {
+            Assert.Throws<ArgumentException>(() => Common.Evaluate(@"
+http.get:""https://jsonplaceholder.typicode.com/users/1""
+   token:foo
+   foo:throws
+"));
+        }
+
+        [Fact]
+        public void Throws_02()
+        {
+            Assert.Throws<ArgumentException>(() => Common.Evaluate(@"
+http.post:""https://jsonplaceholder.typicode.com/users/1""
+   token:foo
+   paylod:howdy
+   foo:throws
+"));
+        }
+
+        [Fact]
+        public void Throws_03()
+        {
+            Assert.Throws<ArgumentException>(() => Common.Evaluate(@"
+http.post:""https://jsonplaceholder.typicode.com/users/1""
+   token:foo
+   foo:throws
+"));
+        }
+
+        [Fact]
+        public void Throws_04()
+        {
+            Assert.Throws<ArgumentException>(() => Common.Evaluate(@"
+http.get:""https://jsonplaceholder.typicode.com/users/1""
+   foo:throws
+"));
+        }
+
+        [Fact]
         public void GetJsonPayload_Throws()
         {
             Assert.Throws<ArgumentException>(() => Common.Evaluate(@"
