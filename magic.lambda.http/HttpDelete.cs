@@ -26,8 +26,9 @@ namespace magic.lambda.http
             : base (httpClient)
         { }
 
-        #region [ -- Private helper methods -- ]
+        #region [ -- Overridden base class methods -- ]
 
+        /// <inheritdoc/>
         protected async override Task Implementation(Node input)
         {
             // Sanity checking input arguments.
