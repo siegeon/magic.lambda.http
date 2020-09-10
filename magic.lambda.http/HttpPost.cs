@@ -38,21 +38,7 @@ namespace magic.lambda.http
         /// <param name="input">Arguments to your slot.</param>
         public void Signal(ISignaler signaler, Node input)
         {
-            // Sanity checking input arguments.
-            Common.SanityCheckInput(input, true);
-
-            var url = input.GetEx<string>();
-            var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
-            var payload = input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<string>() ??
-                throw new ArgumentException("No [payload] supplied to [http.post]");
-            var headers = input.Children.FirstOrDefault(x => x.Name == "headers")?.Children
-                .ToDictionary(x1 => x1.Name, x2 => x2.GetEx<string>());
-
-            // Invoking endpoint, passing in payload, and returning result as value of root node.
-            var response = token == null ?
-                _httpClient.PostAsync<string, string>(url, payload, headers).GetAwaiter().GetResult() :
-                _httpClient.PostAsync<string, string>(url, payload, token).GetAwaiter().GetResult();
-            Common.CreateResponse(input, response);
+            Implementation(input).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -62,6 +48,13 @@ namespace magic.lambda.http
         /// <param name="input">Arguments to your slot.</param>
         /// <returns>An awaitable task.</returns>
         public async Task SignalAsync(ISignaler signaler, Node input)
+        {
+            await Implementation(input);
+        }
+
+        #region [ -- Private helper methods -- ]
+
+        async Task Implementation(Node input)
         {
             // Sanity checking input arguments.
             Common.SanityCheckInput(input, true);
@@ -79,5 +72,7 @@ namespace magic.lambda.http
                 await _httpClient.PostAsync<string, string>(url, payload, token);
             Common.CreateResponse(input, response);
         }
+
+        #endregion
     }
 }
