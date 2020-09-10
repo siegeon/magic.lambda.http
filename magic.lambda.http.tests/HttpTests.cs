@@ -11,8 +11,6 @@ using Xunit;
 using magic.node.extensions;
 using Newtonsoft.Json.Linq;
 
-#if DEEP_TESTING
-
 namespace magic.lambda.http.tests
 {
     public class HttpTests
@@ -85,7 +83,7 @@ http.get:""https://jsonplaceholder.typicode.com/users/1""
         public void PostJson()
         {
             var lambda = Common.Evaluate(@"
-http.post:""https://jsonplaceholder.typicode.com/posts""
+http.post:""https://jsonplaceholder.typicode.com/postsXX""
    payload:@""{""""userId"""":1, """"id"""":1}""
 ");
             Assert.Equal(404, lambda.Children.First().Value);
@@ -165,5 +163,3 @@ wait.http.delete:""https://jsonplaceholder.typicode.com/posts/1""
         }
     }
 }
-
-#endif
