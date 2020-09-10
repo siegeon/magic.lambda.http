@@ -3,7 +3,6 @@
  * See the enclosed LICENSE file for details.
  */
 
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 using magic.node;
@@ -59,16 +58,13 @@ namespace magic.lambda.http
             // Sanity checking input arguments.
             Common.SanityCheckInput(input);
 
-            // Retrieving URL and (optional) token.
-            var url = input.GetEx<string>();
-            var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
-            var headers = input.Children.FirstOrDefault(x => x.Name == "headers")?.Children
-                .ToDictionary(x1 => x1.Name, x2 => x2.GetEx<string>());
+            // Retrieving URL and (optional) token or headers.
+            var args = Common.GetCommonArgs(input);
 
             // Invoking endpoint and returning result as value of root node.
-            var response = token == null ?
-                await _httpClient.DeleteAsync<string>(url, headers) :
-                await _httpClient.DeleteAsync<string>(url, token);
+            var response = args.Token == null ?
+                await _httpClient.DeleteAsync<string>(args.Url, args.Headers) :
+                await _httpClient.DeleteAsync<string>(args.Url, args.Token);
             Common.CreateResponse(input, response);
         }
 

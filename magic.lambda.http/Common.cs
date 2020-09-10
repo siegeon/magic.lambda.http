@@ -5,8 +5,10 @@
 
 using System;
 using System.Linq;
+using System.Collections.Generic;
 using magic.node;
 using magic.http.contracts;
+using magic.node.extensions;
 
 namespace magic.lambda.http
 {
@@ -19,7 +21,7 @@ namespace magic.lambda.http
          * Creates a common lambda structure out of an HTTP Response, adding
          * the HTTP headers, status code, and content into the lambda structure.
          */
-        public static void CreateResponse(Node input, Response<string> response)
+        internal static void CreateResponse(Node input, Response<string> response)
         {
             input.Clear();
             input.Value = (int)response.Status;
@@ -31,7 +33,7 @@ namespace magic.lambda.http
          * Sanity checks input arguments to verify no unsupported arguments are given
          * for an HTTP REST invocation.
          */
-        public static void SanityCheckInput(Node input, bool allowPayload = false)
+        internal static void SanityCheckInput(Node input, bool allowPayload = false)
         {
             if (allowPayload)
             {
@@ -43,6 +45,18 @@ namespace magic.lambda.http
                 if (input.Children.Count() > 1 || input.Children.Any(x => x.Name != "token" && x.Name != "headers"))
                     throw new ArgumentException("[http.xxx] can only handle one [token] or alternatively [headers] child node");
             }
+        }
+
+        /*
+         * Retrieves common arguments to invocation.
+         */
+        internal static (string Url, string Token, Dictionary<string, string> Headers) GetCommonArgs(Node input)
+        {
+            var url = input.GetEx<string>();
+            var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
+            var headers = input.Children.FirstOrDefault(x => x.Name == "headers")?.Children
+                .ToDictionary(x1 => x1.Name, x2 => x2.GetEx<string>());
+            return (url, token, headers);
         }
     }
 }

@@ -59,17 +59,15 @@ namespace magic.lambda.http
             // Sanity checking input arguments.
             Common.SanityCheckInput(input, true);
 
-            var url = input.GetEx<string>();
-            var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
+            // Retrieving URL and (optional) token or headers.
+            var args = Common.GetCommonArgs(input);
             var payload = input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<string>() ??
-                throw new ArgumentException("No [payload] supplied to [http.put]");
-            var headers = input.Children.FirstOrDefault(x => x.Name == "headers")?.Children
-                .ToDictionary(x1 => x1.Name, x2 => x2.GetEx<string>());
+                throw new ArgumentException("No [payload] supplied to [http.post]");
 
             // Invoking endpoint, passing in payload, and returning result as value of root node.
-            var response = token == null ?
-                await _httpClient.PutAsync<string, string>(url, payload, headers) :
-                await _httpClient.PutAsync<string, string>(url, payload, token);
+            var response = args.Token == null ?
+                await _httpClient.PutAsync<string, string>(args.Url, payload, args.Headers) :
+                await _httpClient.PutAsync<string, string>(args.Url, payload, args.Token);
             Common.CreateResponse(input, response);
         }
 
