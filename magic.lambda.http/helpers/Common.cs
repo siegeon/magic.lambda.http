@@ -10,7 +10,7 @@ using magic.node;
 using magic.http.contracts;
 using magic.node.extensions;
 
-namespace magic.lambda.http
+namespace magic.lambda.http.helpers
 {
     /*
      * Helper class to create some sort of Node result out of an HTTP response.
@@ -57,6 +57,15 @@ namespace magic.lambda.http
             var headers = input.Children.FirstOrDefault(x => x.Name == "headers")?.Children
                 .ToDictionary(x1 => x1.Name, x2 => x2.GetEx<string>());
             return (url, token, headers);
+        }
+
+        /*
+         * Returns payload to caller.
+         */
+        internal static string GetPayload(Node input)
+        {
+            return input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<string>() ??
+                throw new ArgumentException("No [payload] supplied to [http.xxx]");
         }
     }
 }
