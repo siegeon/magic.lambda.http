@@ -7,10 +7,10 @@
     <Authors>Thomas Hansen</Authors>
     <Company>Thomas Hansen</Company>
     <Copyright>Thomas Hansen, thomas@gaiasoul.com</Copyright>
-    <Description>HTTP lambda helpers for Magic, allowing you to invoke HTTP REST endpoints using Magic.</Description>
+    <Description>HTTP lambda helpers for Magic, allowing you to invoke HTTP REST endpoints using Magic and Hyperlambda.</Description>
     <PackageProjectUrl>https://github.com/polterguy/magic.lambda.http</PackageProjectUrl>
     <PackOnBuild>true</PackOnBuild>
-    <PackageVersion>8.1.10</PackageVersion>
+    <PackageVersion>8.1.11</PackageVersion>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/polterguy/magic.lambda.http.git</RepositoryUrl>
