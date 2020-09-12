@@ -23,12 +23,3 @@ collection.
 ```
 http.get:"https://google.com"
 ```
-
-## License
-
-Although most of Magic's source code is Open Source, you will need a license key to use it.
-[You can obtain a license key here](https://servergardens.com/buy/).
-Notice, 7 days after you put Magic into production, it will stop working, unless you have a valid
-license for it.
-
-* [Get licensed](https://servergardens.com/buy/)
