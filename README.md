@@ -1,7 +1,7 @@
 
 # Magic Lambda HTTP
 
-[![Build status](https://travis-ci.org/polterguy/magic.lambda.http.svg?master)](https://travis-ci.org/polterguy/magic.lambda.http)
+[![Build status](https://travis-ci.com/polterguy/magic.lambda.http.svg?master)](https://travis-ci.com/polterguy/magic.lambda.http)
 
 Provides HTTP REST capabilities for [Magic](https://github.com/polterguy/magic). More specifically it provides 4 slots.
 
