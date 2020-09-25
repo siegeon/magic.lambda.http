@@ -83,7 +83,7 @@ http.get:""https://jsonplaceholder.typicode.com/users/1""
         public async Task GetJsonAsync()
         {
             var lambda = await Common.EvaluateAsync(@"
-wait.http.get:""https://jsonplaceholder.typicode.com/users/1""
+http.get:""https://jsonplaceholder.typicode.com/users/1""
 ");
             Assert.Equal(200, lambda.Children.First().Value);
         }
@@ -141,7 +141,7 @@ http.post:""https://jsonplaceholder.typicode.com/posts""
         public async Task PostJsonAsync()
         {
             var lambda = await Common.EvaluateAsync(@"
-wait.http.post:""https://jsonplaceholder.typicode.com/posts""
+http.post:""https://jsonplaceholder.typicode.com/posts""
    payload:@""{""""userId"""":1, """"id"""":1}""
 ");
             Assert.Equal(201, lambda.Children.First().Value);
@@ -169,7 +169,7 @@ http.put:""https://jsonplaceholder.typicode.com/posts/1""
         public async Task PutJsonAsync()
         {
             var lambda = await Common.EvaluateAsync(@"
-wait.http.put:""https://jsonplaceholder.typicode.com/posts/1""
+http.put:""https://jsonplaceholder.typicode.com/posts/1""
    payload:@""{""""userId"""":1, """"id"""":1}""
 ");
             Assert.Equal(200, lambda.Children.First().Value);
@@ -197,7 +197,7 @@ http.delete:""https://jsonplaceholder.typicode.com/posts/1""
         public async Task DeleteJsonAsync()
         {
             var lambda = await Common.EvaluateAsync(@"
-wait.http.delete:""https://jsonplaceholder.typicode.com/posts/1""
+http.delete:""https://jsonplaceholder.typicode.com/posts/1""
 ");
             Assert.Equal(200, lambda.Children.First().Value);
         }

@@ -15,7 +15,6 @@ namespace magic.lambda.http
     /// Invokes the HTTP POST verb towards some resource.
     /// </summary>
     [Slot(Name = "http.post")]
-    [Slot(Name = "wait.http.post")]
     public class HttpPost : HttpBase
     {
         /// <summary>

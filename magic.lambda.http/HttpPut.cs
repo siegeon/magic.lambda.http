@@ -15,7 +15,6 @@ namespace magic.lambda.http
     /// Invokes the HTTP PUT verb towards some resource.
     /// </summary>
     [Slot(Name = "http.put")]
-    [Slot(Name = "wait.http.put")]
     public class HttpPut : HttpBase
     {
         /// <summary>

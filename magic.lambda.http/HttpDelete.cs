@@ -15,7 +15,6 @@ namespace magic.lambda.http
     /// Invokes the HTTP DELETE verb towards some resource.
     /// </summary>
     [Slot(Name = "http.delete")]
-    [Slot(Name = "wait.http.delete")]
     public class HttpDelete : HttpBase
     {
         /// <summary>
