@@ -47,6 +47,7 @@ namespace magic.lambda.http.tests
             services.AddTransient<IConfiguration>((svc) => configuration);
             services.AddTransient<ISignaler, Signaler>();
             services.AddTransient<IHttpClient, HttpClient>();
+            services.AddHttpClient();
             var types = new SignalsProvider(InstantiateAllTypes<ISlot>(services));
             services.AddTransient<ISignalsProvider>((svc) => types);
             var provider = services.BuildServiceProvider();
