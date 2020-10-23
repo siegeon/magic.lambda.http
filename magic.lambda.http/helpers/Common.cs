@@ -4,6 +4,7 @@
  */
 
 using System;
+using System.Text;
 using System.Linq;
 using System.Collections.Generic;
 using magic.node;
@@ -21,7 +22,7 @@ namespace magic.lambda.http.helpers
          * Creates a common lambda structure out of an HTTP Response, adding
          * the HTTP headers, status code, and content into the lambda structure.
          */
-        internal static void CreateResponse(Node input, Response<string> response)
+        internal static void CreateResponse<T>(Node input, Response<T> response)
         {
             input.Clear();
             input.Value = (int)response.Status;
@@ -60,12 +61,25 @@ namespace magic.lambda.http.helpers
         }
 
         /*
-         * Returns payload to caller.
+         * Returns payload to caller as string.
          */
         internal static string GetPayload(Node input)
         {
             return input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<string>() ??
                 throw new ArgumentException("No [payload] supplied to [http.xxx]");
+        }
+
+        /*
+         * Returns payload to caller as bytes.
+         */
+        internal static byte[] GetBytesPayload(Node input)
+        {
+            var result = input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<object>() ??
+                throw new ArgumentException("No [payload] supplied to [http.xxx]");
+            if (result is byte[] resultBytes)
+                return resultBytes;
+            else
+                return Encoding.UTF8.GetBytes(result as string);
         }
     }
 }
