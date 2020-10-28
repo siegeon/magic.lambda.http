@@ -27,7 +27,19 @@ namespace magic.lambda.http.helpers
             input.Clear();
             input.Value = (int)response.Status;
             input.Add(new Node("headers", null, response.Headers.Select(x => new Node(x.Key, x.Value))));
-            input.Add(new Node("content", response.Content));
+            if (!IsNullOrEmpty(response.Content))
+                input.Add(new Node("content", response.Content));
+        }
+
+        internal static bool IsNullOrEmpty(object content)
+        {
+            if (content == null)
+                return true;
+            if (content is string strContent && string.IsNullOrEmpty(strContent))
+                return true;
+            if (content is byte[] bytes && bytes.Length == 0)
+                return true;
+            return false;
         }
 
         /*
