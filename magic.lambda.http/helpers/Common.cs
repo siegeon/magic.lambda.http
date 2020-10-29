@@ -75,9 +75,9 @@ namespace magic.lambda.http.helpers
         /*
          * Returns payload to caller as string.
          */
-        internal static string GetPayload(Node input)
+        internal static T GetPayload<T>(Node input) where T : class
         {
-            return input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<string>() ??
+            return input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<T>() ??
                 throw new ArgumentException("No [payload] supplied to [http.xxx]");
         }
 

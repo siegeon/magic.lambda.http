@@ -35,12 +35,12 @@ namespace magic.lambda.http
 
             // Retrieving URL and (optional) token or headers.
             var (Url, Token, Headers) = Common.GetCommonArgs(input);
-            var payload = Common.GetBytesPayload(input);
+            var payload = Common.GetPayload<object>(input);
 
             // Invoking endpoint, passing in payload, and returning result as value of root node.
             var response = Token == null ?
-                await HttpClient.PatchAsync<byte[], string>(Url, payload, Headers) :
-                await HttpClient.PatchAsync<byte[], string>(Url, payload, Token);
+                await HttpClient.PatchAsync<object, object>(Url, payload, Headers) :
+                await HttpClient.PatchAsync<object, object>(Url, payload, Token);
             Common.CreateResponse(input, response);
         }
 

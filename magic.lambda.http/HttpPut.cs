@@ -35,7 +35,7 @@ namespace magic.lambda.http
 
             // Retrieving URL and (optional) token or headers.
             var (Url, Token, Headers) = Common.GetCommonArgs(input);
-            var payload = Common.GetPayload(input);
+            var payload = Common.GetPayload<string>(input);
 
             // Invoking endpoint, passing in payload, and returning result as value of root node.
             var response = Token == null ?
