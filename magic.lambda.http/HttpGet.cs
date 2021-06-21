@@ -15,6 +15,7 @@ namespace magic.lambda.http
     /// Invokes the HTTP GET verb towards some resource.
     /// </summary>
     [Slot(Name = "http.get")]
+    [Slot(Name = "http.get.binary")]
     public class HttpGet : HttpBase
     {
         /// <summary>
@@ -37,10 +38,22 @@ namespace magic.lambda.http
             var (Url, Token, Headers) = Common.GetCommonArgs(input);
 
             // Invoking endpoint and returning result as value of root node.
-            var response = Token == null ?
-                await HttpClient.GetAsync<string>(Url, Headers) :
-                await HttpClient.GetAsync<string>(Url, Token);
-            Common.CreateResponse(input, response);
+            if (input.Name == "http.get")
+            {
+                // String content.
+                var response = Token == null ?
+                    await HttpClient.GetAsync<string>(Url, Headers) :
+                    await HttpClient.GetAsync<string>(Url, Token);
+                Common.CreateResponse(input, response);
+            }
+            else
+            {
+                // Binary content.
+                var response = Token == null ?
+                    await HttpClient.GetAsync<byte[]>(Url, Headers) :
+                    await HttpClient.GetAsync<byte[]>(Url, Token);
+                Common.CreateResponse(input, response);
+            }
         }
 
         #endregion
