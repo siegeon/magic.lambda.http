@@ -127,11 +127,13 @@ namespace magic.lambda.http
                 if (content.Headers.Any(x => x.Key.ToLowerInvariant() == "content-type"))
                 {
                     var rawHeader = content.Headers.First(x => x.Key.ToLowerInvariant() == "content-type");
-                    contentType = rawHeader.Value.First();
+                    contentType = rawHeader.Value.First()?.Split(';').FirstOrDefault() ?? "application/json";
                 }
                 switch (contentType)
                 {
                     case "application/json":
+                    case "application/x-www-form-urlencoded":
+                    case "application/x-hyperlambda":
                         result.Add(new Node("content", await content.ReadAsStringAsync()));
                         break;
 
