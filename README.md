@@ -4,7 +4,6 @@
 Provides HTTP REST capabilities for Magic. More specifically this project provides the following 4 slots.
 
 * __[http.get]__ - Returns some resource using the HTTP GET verb towards the specified URL
-* __[http.get.binary]__ - Returns some _binary_ resource using the HTTP GET verb towards the specified URL
 * __[http.delete]__ - Deletes some resource using the HTTP DELETE verb
 * __[http.post]__ - Posts some resources to some URL using the HTTP POST verb
 * __[http.put]__ - Puts some resources to some URL using the HTTP PUT verb
@@ -24,18 +23,21 @@ collection.
 http.get:"https://google.com"
 ```
 
-**Notice** - If you want to retrieve _binary_ content, you should use the **[http.get.binary]** override.
-
 ## Posting, putting and patching data
 
-The POST, PUT and PATCH slots, requires a **[payload]** argument, which becomes the body of the request.
-Below is an example illustrating how to create a POST request, with a Bearer token to access the end resource.
+The POST, PUT and PATCH slots, requires a **[payload]** argument or optionally a **[filename]** argument,
+which becomes the body of the request. Below is an example illustrating how to create a POST request, with
+a Bearer token to access the end resource.
 
 ```
 http.post
    token:qwerty_secret_JWT_token_goes_here
    payload:some mumbo jumbo payload, typically JSON and not text though ...
 ```
+
+**Notice** - If you want to submit a large file to some endpoint, without loading the file into memory
+first, you should rather use **[filename]** instead of **[payload]**. This ensures the file is submitted
+to your endpoint without loading it into memory first.
 
 ## HTTP headers
 

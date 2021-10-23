@@ -123,7 +123,25 @@ namespace magic.lambda.http
                 }
 
                 // HTTP content.
-                result.Add(new Node("content", await content.ReadAsStringAsync()));
+                var contentType = "application/json";
+                if (content.Headers.Any(x => x.Key.ToLowerInvariant() == "content-type"))
+                {
+                    var rawHeader = content.Headers.First(x => x.Key.ToLowerInvariant() == "content-type");
+                    contentType = rawHeader.Value.First();
+                }
+                switch (contentType)
+                {
+                    case "application/json":
+                        result.Add(new Node("content", await content.ReadAsStringAsync()));
+                        break;
+
+                    default:
+                        if (contentType.StartsWith("text/"))
+                            result.Add(new Node("content", await content.ReadAsStringAsync()));
+                        else
+                            result.Add(new Node("content", await content.ReadAsByteArrayAsync()));
+                        break;
+                }
             }
         }
 
