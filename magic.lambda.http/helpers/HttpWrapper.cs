@@ -134,6 +134,8 @@ namespace magic.lambda.http
                     case "application/json":
                     case "application/x-www-form-urlencoded":
                     case "application/x-hyperlambda":
+                    case "application/rss+xml":
+                    case "application/xml":
                         result.Add(new Node("content", await content.ReadAsStringAsync()));
                         break;
 
