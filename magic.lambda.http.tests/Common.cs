@@ -5,19 +5,24 @@
 
 using System;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using magic.node;
-using magic.http.services;
-using magic.http.contracts;
 using magic.signals.services;
 using magic.signals.contracts;
+using magic.lambda.io.contracts;
 using magic.node.extensions.hyperlambda;
 
 namespace magic.lambda.http.tests
 {
+    internal class RootResolver : IRootResolver
+    {
+        public string RootFolder => Assembly.GetCallingAssembly().Location.Substring(0, Assembly.GetCallingAssembly().Location.LastIndexOf("/") + 1);
+    }
+
     public static class Common
     {
         static public Node Evaluate(string hl)
@@ -46,10 +51,10 @@ namespace magic.lambda.http.tests
             var services = new ServiceCollection();
             services.AddTransient<IConfiguration>((svc) => configuration);
             services.AddTransient<ISignaler, Signaler>();
-            services.AddTransient<IHttpClient, HttpClient>();
             services.AddHttpClient();
             var types = new SignalsProvider(InstantiateAllTypes<ISlot>(services));
             services.AddTransient<ISignalsProvider>((svc) => types);
+            services.AddTransient<IRootResolver, RootResolver>();
             var provider = services.BuildServiceProvider();
             return provider;
         }

@@ -24,6 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\magic.lambda.io\magic.lambda.io\magic.lambda.io.csproj" />
     <ProjectReference Include="..\magic.lambda.http\magic.lambda.http.csproj" />
   </ItemGroup>
 </Project>

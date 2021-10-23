@@ -3,11 +3,10 @@
  * See the enclosed LICENSE file for details.
  */
 
+using System.Net.Http;
 using System.Threading.Tasks;
 using magic.node;
-using magic.http.contracts;
 using magic.signals.contracts;
-using magic.lambda.http.helpers;
 
 namespace magic.lambda.http
 {
@@ -15,35 +14,38 @@ namespace magic.lambda.http
     /// Invokes the HTTP POST verb towards some resource.
     /// </summary>
     [Slot(Name = "http.post")]
-    public class HttpPost : HttpBase
+    public class HttpPost : ISlot, ISlotAsync
     {
+        readonly IHttpClientFactory _factory;
+
         /// <summary>
         /// Creates an instance of your class.
         /// </summary>
         /// <param name="httpClient">HTTP client to use for invocation.</param>
-        public HttpPost(IHttpClient httpClient)
-            : base (httpClient)
-        { }
-
-        #region [ -- Overridden base class methods -- ]
-
-        /// <inheritdoc/>
-        protected async override Task Implementation(Node input)
+        public HttpPost(IHttpClientFactory factory)
         {
-            // Sanity checking input arguments.
-            Common.SanityCheckInput(input, true);
-
-            // Retrieving URL and (optional) token or headers.
-            var (Url, Token, Headers) = Common.GetCommonArgs(input);
-            var payload = Common.GetPayload<string>(input);
-
-            // Invoking endpoint, passing in payload, and returning result as value of root node.
-            var response = Token == null ?
-                await HttpClient.PostAsync<string, string>(Url, payload, Headers) :
-                await HttpClient.PostAsync<string, string>(Url, payload, Token);
-            Common.CreateResponse(input, response);
+            _factory = factory;
         }
 
-        #endregion
+        /// <summary>
+        /// Implementation of signal
+        /// </summary>
+        /// <param name="signaler">Signaler used to signal</param>
+        /// <param name="input">Parameters passed from signaler</param>
+        public void Signal(ISignaler signaler, Node input)
+        {
+            HttpWrapper.Invoke(signaler, _factory, HttpMethod.Post, input).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Implementation of signal
+        /// </summary>
+        /// <param name="signaler">Signaler used to signal</param>
+        /// <param name="input">Parameters passed from signaler</param>
+        /// <returns>An awaiatble task.</returns>
+        public async Task SignalAsync(ISignaler signaler, Node input)
+        {
+            await HttpWrapper.Invoke(signaler, _factory, HttpMethod.Post, input);
+        }
     }
 }

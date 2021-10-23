@@ -3,11 +3,10 @@
  * See the enclosed LICENSE file for details.
  */
 
+using System.Net.Http;
 using System.Threading.Tasks;
 using magic.node;
-using magic.http.contracts;
 using magic.signals.contracts;
-using magic.lambda.http.helpers;
 
 namespace magic.lambda.http
 {
@@ -15,47 +14,38 @@ namespace magic.lambda.http
     /// Invokes the HTTP GET verb towards some resource.
     /// </summary>
     [Slot(Name = "http.get")]
-    [Slot(Name = "http.get.binary")]
-    public class HttpGet : HttpBase
+    public class HttpGet : ISlot, ISlotAsync
     {
+        readonly IHttpClientFactory _factory;
+
         /// <summary>
         /// Creates an instance of your class.
         /// </summary>
         /// <param name="httpClient">HTTP client to use for invocation.</param>
-        public HttpGet(IHttpClient httpClient)
-            : base (httpClient)
-        { }
-
-        #region [ -- Overridden base class methods -- ]
-
-        /// <inheritdoc/>
-        protected async override Task Implementation(Node input)
+        public HttpGet(IHttpClientFactory factory)
         {
-            // Sanity checking input arguments.
-            Common.SanityCheckInput(input);
-
-            // Retrieving URL and (optional) token or headers.
-            var (Url, Token, Headers) = Common.GetCommonArgs(input);
-
-            // Invoking endpoint and returning result as value of root node.
-            if (input.Name == "http.get")
-            {
-                // String content.
-                var response = Token == null ?
-                    await HttpClient.GetAsync<string>(Url, Headers) :
-                    await HttpClient.GetAsync<string>(Url, Token);
-                Common.CreateResponse(input, response);
-            }
-            else
-            {
-                // Binary content.
-                var response = Token == null ?
-                    await HttpClient.GetAsync<byte[]>(Url, Headers) :
-                    await HttpClient.GetAsync<byte[]>(Url, Token);
-                Common.CreateResponse(input, response);
-            }
+            _factory = factory;
         }
 
-        #endregion
+        /// <summary>
+        /// Implementation of signal
+        /// </summary>
+        /// <param name="signaler">Signaler used to signal</param>
+        /// <param name="input">Parameters passed from signaler</param>
+        public void Signal(ISignaler signaler, Node input)
+        {
+            HttpWrapper.Invoke(signaler, _factory, HttpMethod.Get, input).GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Implementation of signal
+        /// </summary>
+        /// <param name="signaler">Signaler used to signal</param>
+        /// <param name="input">Parameters passed from signaler</param>
+        /// <returns>An awaiatble task.</returns>
+        public async Task SignalAsync(ISignaler signaler, Node input)
+        {
+            await HttpWrapper.Invoke(signaler, _factory, HttpMethod.Get, input);
+        }
     }
 }
