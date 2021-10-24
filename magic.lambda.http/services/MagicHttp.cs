@@ -73,8 +73,8 @@ namespace magic.lambda.http.services
                         case "delete":
 
                             // Empty request, sanity checking invocation, making sure no [payload] was provided.
-                            if (input.Children.Any(x => x.Name == "payload"))
-                                throw new ArgumentException($"Do not supply a [payload] argument to [{input.Name}]");
+                            if (input.Children.Any(x => x.Name == "payload" || x.Name == "filename"))
+                                throw new ArgumentException($"Do not supply a [payload] or [filename] argument to [{input.Name}]");
                             using (var response = await client.SendAsync(request))
                             {
                                 await GetResponse(response, input);
@@ -83,7 +83,7 @@ namespace magic.lambda.http.services
 
                         default:
 
-                            // Content request.
+                            // Content request, implying 'PUT', 'POST' or 'DELETE' request.
                             using (var content = GetRequestContent(signaler, input))
                             {
                                 AddContentHeaders(content, headers);
@@ -114,20 +114,27 @@ namespace magic.lambda.http.services
             var url = input.GetEx<string>();
             headers = input.Children
                 .FirstOrDefault(x => x.Name == "headers")?
-                .Children.ToDictionary(lhs => lhs.Name, rhs => rhs.GetEx<string>());
+                .Children
+                .ToDictionary(lhs => lhs.Name, rhs => rhs.GetEx<string>()) ?? new Dictionary<string, string>();
 
             // Applying default headers if no [headers] argument was supplied.
-            if (headers == null)
+            if (headers.Count == 0)
             {
                 switch (method.Method.ToLowerInvariant())
                 {
                     case "get":
                     case "delete":
-                        headers = DEFAULT_HEADERS_EMPTY_REQUEST;
+                        foreach (var idx in DEFAULT_HEADERS_EMPTY_REQUEST)
+                        {
+                            headers[idx.Key] = idx.Value;
+                        }
                         break;
 
                     default:
-                        headers = DEFAULT_HEADERS_REQUEST;
+                        foreach (var idx in DEFAULT_HEADERS_REQUEST)
+                        {
+                            headers[idx.Key] = idx.Value;
+                        }
                         break;
                 }
             }
@@ -158,6 +165,9 @@ namespace magic.lambda.http.services
                     case "Last-Modified":
 
                         // These HTTP headers we simply ignore, since they're added to the content object later.
+                        // However, if such headers are added to GET or DELETE invocation, it's considered a bug.
+                        if (method.Method.ToLowerInvariant() == "get" || method.Method.ToLowerInvariant() == "get")
+                            throw new ArgumentException($"You cannot decorate an HTTP GET or DELETE request with content type of headers");
                         break;
 
                     default:
@@ -263,12 +273,12 @@ namespace magic.lambda.http.services
                     result.Add(headers);
                 }
 
-                // HTTP content.
+                // HTTP content, defaulting Content-Type to 'application/json'.
                 var contentType = "application/json";
                 if (content.Headers.Any(x => x.Key.ToLowerInvariant() == "content-type"))
                 {
                     var rawHeader = content.Headers.First(x => x.Key.ToLowerInvariant() == "content-type");
-                    contentType = rawHeader.Value.First()?.Split(';').FirstOrDefault() ?? "application/json";
+                    contentType = rawHeader.Value.First()?.Split(';')?.FirstOrDefault() ?? "application/json";
                 }
                 switch (contentType)
                 {
