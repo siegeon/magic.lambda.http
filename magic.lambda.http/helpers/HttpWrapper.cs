@@ -131,6 +131,7 @@ namespace magic.lambda.http
                 }
                 switch (contentType)
                 {
+                    // Common text types of MIME types.
                     case "application/json":
                     case "application/x-www-form-urlencoded":
                     case "application/x-hyperlambda":
@@ -139,7 +140,10 @@ namespace magic.lambda.http
                         result.Add(new Node("content", await content.ReadAsStringAsync()));
                         break;
 
+                    // Anything but the above.
                     default:
+
+                        // Checking if this MIME type starts with "text/" something, at which point we treat it as text.
                         if (contentType.StartsWith("text/"))
                             result.Add(new Node("content", await content.ReadAsStringAsync()));
                         else
