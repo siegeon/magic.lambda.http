@@ -7,6 +7,7 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using magic.node;
 using magic.signals.contracts;
+using magic.lambda.http.contracts;
 
 namespace magic.lambda.http
 {
@@ -16,15 +17,15 @@ namespace magic.lambda.http
     [Slot(Name = "http.patch")]
     public class HttpPatch : ISlot, ISlotAsync
     {
-        readonly IHttpClientFactory _factory;
+        IMagicHttp _service;
 
         /// <summary>
         /// Creates an instance of your class.
         /// </summary>
-        /// <param name="httpClient">HTTP client to use for invocation.</param>
-        public HttpPatch(IHttpClientFactory factory)
+        /// <param name="service">Actual implementation.</param>
+        public HttpPatch(IMagicHttp service)
         {
-            _factory = factory;
+            _service = service;
         }
 
         /// <summary>
@@ -34,7 +35,7 @@ namespace magic.lambda.http
         /// <param name="input">Parameters passed from signaler</param>
         public void Signal(ISignaler signaler, Node input)
         {
-            HttpWrapper.Invoke(signaler, _factory, new HttpMethod("PATCH"), input).GetAwaiter().GetResult();
+            _service.Invoke(signaler, new HttpMethod("PATCH"), input).GetAwaiter().GetResult();
         }
 
         /// <summary>
@@ -45,7 +46,7 @@ namespace magic.lambda.http
         /// <returns>An awaiatble task.</returns>
         public async Task SignalAsync(ISignaler signaler, Node input)
         {
-            await HttpWrapper.Invoke(signaler, _factory, new HttpMethod("PATCH"), input);
+            await _service.Invoke(signaler, new HttpMethod("PATCH"), input);
         }
     }
 }

@@ -12,14 +12,15 @@ using System.Collections.Generic;
 using magic.node;
 using magic.node.extensions;
 using magic.signals.contracts;
+using magic.lambda.http.contracts;
 
-namespace magic.lambda.http
+namespace magic.lambda.http.services
 {
-    /*
-     * Class encapsulating the invocation of a single HTTP request from a declaration
-     * specified as a Node object.
-     */
-    internal static class HttpWrapper
+    /// <summary>
+    /// Class encapsulating the invocation of a single HTTP request from a declaration
+    /// specified as a Node object.
+    /// </summary>
+    public class MagicHttp : IMagicHttp
     {
         // Default HTTP headers for an empty HTTP request.
         static readonly Dictionary<string, string> DEFAULT_HEADERS_EMPTY_REQUEST =
@@ -33,18 +34,28 @@ namespace magic.lambda.http
                 { "Content-Type", "application/json" },
                 { "Accept", "application/json" },
             };
+        
+        // Needed to create HttpClient instances.
+        IHttpClientFactory _factory;
 
-        /*
-         * Invoke the specified HTTP request.
-         */
-        public static async Task Invoke(
-            ISignaler signaler,
-            IHttpClientFactory factory, 
-            HttpMethod method,
-            Node input)
+        /// <summary>
+        /// Creates an instance of your type.
+        /// </summary>
+        /// <param name="factory">Needed to create HttpClient instances to actually us as implementation</param>
+        public MagicHttp(IHttpClientFactory factory)
+        {
+            _factory = factory;
+        }
+
+        /// <inheritdoc />
+        public async Task Invoke(ISignaler signaler, HttpMethod method, Node input)
         {
             // Sanitcy checking invocation.
-            if (input.Children.Any(x => x.Name != "payload" && x.Name != "filename" && x.Name != "headers" && x.Name != "token"))
+            if (input.Children.Any(x =>
+                x.Name != "payload" &&
+                x.Name != "filename" &&
+                x.Name != "headers" &&
+                x.Name != "token"))
                 throw new ArgumentException($"Only supply [payload], [filename], [headers] and [token] to [{input.Name}]");
 
             /*
@@ -52,7 +63,7 @@ namespace magic.lambda.http
              * since it's created using IHttpClientFactory - However, to make sure
              * we keep with the standard of the language, we do it anyways.
              */
-            using (var client = factory.CreateClient())
+            using (var client = _factory.CreateClient())
             {
                 using (var request = CreateRequestMessage(method, input, out var headers))
                 {
@@ -61,11 +72,9 @@ namespace magic.lambda.http
                         case "get":
                         case "delete":
 
-                            // Sanity checking invocation.
+                            // Empty request, sanity checking invocation, making sure no [payload] was provided.
                             if (input.Children.Any(x => x.Name == "payload"))
                                 throw new ArgumentException($"Do not supply a [payload] argument to [{input.Name}]");
-
-                            // Empty request.
                             using (var response = await client.SendAsync(request))
                             {
                                 await GetResponse(response, input);
@@ -91,67 +100,6 @@ namespace magic.lambda.http
         }
 
         #region [ -- Private helper methods -- ]
-
-        /*
-         * Extracts the response content from the specified response message, and
-         * puts it into the specified node.
-         */
-        static async Task GetResponse(HttpResponseMessage response, Node result)
-        {
-            // House cleaning.
-            result.Clear();
-
-            // Status code.
-            result.Value = (int)response.StatusCode;
-
-            // Ensuring we clean up after ourselves.
-            using (var content = response.Content)
-            {
-                // HTTP headers.
-                if (response.Headers.Any() || content.Headers.Any())
-                {
-                    var headers = new Node("headers");
-                    foreach (var idx in response.Headers)
-                    {
-                        headers.Add(new Node(idx.Key, string.Join(";", idx.Value)));
-                    }
-                    foreach (var idx in content.Headers)
-                    {
-                        headers.Add(new Node(idx.Key, string.Join(";", idx.Value)));
-                    }
-                    result.Add(headers);
-                }
-
-                // HTTP content.
-                var contentType = "application/json";
-                if (content.Headers.Any(x => x.Key.ToLowerInvariant() == "content-type"))
-                {
-                    var rawHeader = content.Headers.First(x => x.Key.ToLowerInvariant() == "content-type");
-                    contentType = rawHeader.Value.First()?.Split(';').FirstOrDefault() ?? "application/json";
-                }
-                switch (contentType)
-                {
-                    // Common text types of MIME types.
-                    case "application/json":
-                    case "application/x-www-form-urlencoded":
-                    case "application/x-hyperlambda":
-                    case "application/rss+xml":
-                    case "application/xml":
-                        result.Add(new Node("content", await content.ReadAsStringAsync()));
-                        break;
-
-                    // Anything but the above.
-                    default:
-
-                        // Checking if this MIME type starts with "text/" something, at which point we treat it as text.
-                        if (contentType.StartsWith("text/"))
-                            result.Add(new Node("content", await content.ReadAsStringAsync()));
-                        else
-                            result.Add(new Node("content", await content.ReadAsByteArrayAsync()));
-                        break;
-                }
-            }
-        }
 
         /*
          * Creates an HTTP request message and returns to caller, correctly decorating
@@ -280,6 +228,67 @@ namespace magic.lambda.http
                         if (content.Headers.Contains(idx))
                             content.Headers.Remove(idx);
                         content.Headers.Add(idx, headers[idx]);
+                        break;
+                }
+            }
+        }
+
+        /*
+         * Extracts the response content from the specified response message, and
+         * puts it into the specified node.
+         */
+        static async Task GetResponse(HttpResponseMessage response, Node result)
+        {
+            // House cleaning.
+            result.Clear();
+
+            // Status code.
+            result.Value = (int)response.StatusCode;
+
+            // Ensuring we clean up after ourselves.
+            using (var content = response.Content)
+            {
+                // HTTP headers.
+                if (response.Headers.Any() || content.Headers.Any())
+                {
+                    var headers = new Node("headers");
+                    foreach (var idx in response.Headers)
+                    {
+                        headers.Add(new Node(idx.Key, string.Join(";", idx.Value)));
+                    }
+                    foreach (var idx in content.Headers)
+                    {
+                        headers.Add(new Node(idx.Key, string.Join(";", idx.Value)));
+                    }
+                    result.Add(headers);
+                }
+
+                // HTTP content.
+                var contentType = "application/json";
+                if (content.Headers.Any(x => x.Key.ToLowerInvariant() == "content-type"))
+                {
+                    var rawHeader = content.Headers.First(x => x.Key.ToLowerInvariant() == "content-type");
+                    contentType = rawHeader.Value.First()?.Split(';').FirstOrDefault() ?? "application/json";
+                }
+                switch (contentType)
+                {
+                    // Common text types of MIME types.
+                    case "application/json":
+                    case "application/x-www-form-urlencoded":
+                    case "application/x-hyperlambda":
+                    case "application/rss+xml":
+                    case "application/xml":
+                        result.Add(new Node("content", await content.ReadAsStringAsync()));
+                        break;
+
+                    // Anything but the above.
+                    default:
+
+                        // Checking if this MIME type starts with "text/" something, at which point we treat it as text.
+                        if (contentType.StartsWith("text/"))
+                            result.Add(new Node("content", await content.ReadAsStringAsync()));
+                        else
+                            result.Add(new Node("content", await content.ReadAsByteArrayAsync()));
                         break;
                 }
             }

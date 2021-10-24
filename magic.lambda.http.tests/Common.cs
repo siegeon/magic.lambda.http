@@ -14,6 +14,8 @@ using magic.node;
 using magic.signals.services;
 using magic.signals.contracts;
 using magic.lambda.io.contracts;
+using magic.lambda.http.services;
+using magic.lambda.http.contracts;
 using magic.node.extensions.hyperlambda;
 
 namespace magic.lambda.http.tests
@@ -55,6 +57,7 @@ namespace magic.lambda.http.tests
             var types = new SignalsProvider(InstantiateAllTypes<ISlot>(services));
             services.AddTransient<ISignalsProvider>((svc) => types);
             services.AddTransient<IRootResolver, RootResolver>();
+            services.AddTransient<IMagicHttp, MagicHttp>();
             var provider = services.BuildServiceProvider();
             return provider;
         }
