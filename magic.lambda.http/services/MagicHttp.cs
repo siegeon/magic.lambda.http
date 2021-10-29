@@ -166,7 +166,7 @@ namespace magic.lambda.http.services
 
                         // These HTTP headers we simply ignore, since they're added to the content object later.
                         // However, if such headers are added to GET or DELETE invocation, it's considered a bug.
-                        if (method.Method.ToLowerInvariant() == "get" || method.Method.ToLowerInvariant() == "get")
+                        if (method.Method.ToLowerInvariant() == "get" || method.Method.ToLowerInvariant() == "delete")
                             throw new ArgumentException($"You cannot decorate an HTTP GET or DELETE request with content type of headers");
                         break;
 
