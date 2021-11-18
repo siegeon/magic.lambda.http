@@ -34,16 +34,16 @@ namespace magic.lambda.http.services
                 { "Accept", "application/json" },
             };
         
-        // Needed to create HttpClient instances.
-        IHttpClientFactory _factory;
+        // Dependency injected HttpClient instance.
+        readonly HttpClient _client;
 
         /// <summary>
         /// Creates an instance of your type.
         /// </summary>
-        /// <param name="factory">Needed to create HttpClient instances to actually us as implementation</param>
-        public MagicHttp(IHttpClientFactory factory)
+        /// <param name="client">Actual HttpClient implementation</param>
+        public MagicHttp(HttpClient client)
         {
-            _factory = factory;
+            _client = client;
         }
 
         /// <inheritdoc />
@@ -62,38 +62,35 @@ namespace magic.lambda.http.services
              * since it's created using IHttpClientFactory - However, to make sure
              * we keep with the standard of the language, we do it anyways.
              */
-            using (var client = _factory.CreateClient())
+            using (var request = CreateRequestMessage(method, input, out var headers))
             {
-                using (var request = CreateRequestMessage(method, input, out var headers))
+                switch (method.Method.ToLowerInvariant())
                 {
-                    switch (method.Method.ToLowerInvariant())
-                    {
-                        case "get":
-                        case "delete":
+                    case "get":
+                    case "delete":
 
-                            // Empty request, sanity checking invocation, making sure no [payload] was provided.
-                            if (input.Children.Any(x => x.Name == "payload" || x.Name == "filename"))
-                                throw new ArgumentException($"Do not supply a [payload] or [filename] argument to [{input.Name}]");
-                            using (var response = await client.SendAsync(request))
+                        // Empty request, sanity checking invocation, making sure no [payload] was provided.
+                        if (input.Children.Any(x => x.Name == "payload" || x.Name == "filename"))
+                            throw new ArgumentException($"Do not supply a [payload] or [filename] argument to [{input.Name}]");
+                        using (var response = await _client.SendAsync(request))
+                        {
+                            await GetResponse(response, input);
+                        }
+                        break;
+
+                    default:
+
+                        // Content request, implying 'PUT', 'POST' or 'DELETE' request.
+                        using (var content = GetRequestContent(signaler, input))
+                        {
+                            AddContentHeaders(content, headers);
+                            request.Content = content;
+                            using (var response = await _client.SendAsync(request))
                             {
                                 await GetResponse(response, input);
                             }
-                            break;
-
-                        default:
-
-                            // Content request, implying 'PUT', 'POST' or 'DELETE' request.
-                            using (var content = GetRequestContent(signaler, input))
-                            {
-                                AddContentHeaders(content, headers);
-                                request.Content = content;
-                                using (var response = await client.SendAsync(request))
-                                {
-                                    await GetResponse(response, input);
-                                }
-                            }
-                            break;
-                    }
+                        }
+                        break;
                 }
             }
         }
