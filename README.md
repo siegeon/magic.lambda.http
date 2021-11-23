@@ -56,6 +56,21 @@ http.post:"https://jsonplaceholder.typicode.com/posts"
       id:int:1
 ```
 
+**Notice** - If you pass in a lambda object as illustrated above, then all expressions in all nodes inside
+of your **[payload]** argument will be automatically evaluated and _"unwrapped"_. Consider the following to
+understand.
+
+```
+.userId:int:1
+http.post:"https://jsonplaceholder.typicode.com/posts"
+   payload
+      userId:x:@.userId
+      id:int:1
+```
+
+The above will evaluate the `:x:@.userId` expression, resulting in the integer value of 1, before the lambda
+object is converted to JSON.
+
 ## HTTP headers
 
 Below is another example invoking DELETE with an explicit **[headers]** collection.

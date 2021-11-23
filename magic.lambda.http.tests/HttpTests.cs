@@ -180,6 +180,19 @@ http.put:""https://jsonplaceholder.typicode.com/posts/1""
         }
 
         [Fact]
+        public void PutLambdaExpression()
+        {
+            var lambda = Common.Evaluate(@"
+.userId:int:1
+http.put:""https://jsonplaceholder.typicode.com/posts/1""
+   payload
+      userId:x:@.userId
+      id:int:1
+");
+            Assert.Equal(200, lambda.Children.Skip(1).First().Value);
+        }
+
+        [Fact]
         public void PutJsonNoPayload_Throws()
         {
             Assert.Throws<ArgumentException>(() => Common.Evaluate(@"

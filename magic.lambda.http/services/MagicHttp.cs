@@ -215,6 +215,15 @@ namespace magic.lambda.http.services
                     if (!payloadNode.Children.Any())
                         throw new ArgumentException($"No [payload] value supplied to [{input.Name}]");
 
+                    /*
+                     * Automatically [unerap]'ing all nodes, since there are no reasons why you'd want
+                     * to pass in an expression as JSON to any endpoints.
+                     */
+                    foreach (var idx in payloadNode.Children)
+                    {
+                        Unwrap(idx, input.Name);
+                    }
+
                     // Using JSON slots to transform nodes to JSON.
                     signaler.Signal("lambda2json", payloadNode);
                     content = payloadNode.Get<object>();
@@ -234,6 +243,24 @@ namespace magic.lambda.http.services
             if (content is byte[] bytes)
                 return new ByteArrayContent(bytes);
             return new StringContent(content as string);
+        }
+
+        /*
+         * Helper method to [unwrap] all nodes passed in as a lambda object.
+         */
+        static void Unwrap(Node node, string slotName)
+        {
+            if (node.Value is Expression)
+            {
+                var exp = node.Evaluate();
+                if (exp.Count() > 1)
+                    throw new ArgumentException($"Multiple sources found for node in lambda object supplied to [{slotName}]");
+                node.Value = exp.FirstOrDefault()?.Value;
+            }
+            foreach (var idx in node.Children)
+            {
+                Unwrap(idx, slotName);
+            }
         }
 
         /*
