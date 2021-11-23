@@ -181,24 +181,52 @@ namespace magic.lambda.http.services
          */
         static HttpContent GetRequestContent(ISignaler signaler, Node input)
         {
-            // Using string/byte[] content if available.
-            var content = input.Children.FirstOrDefault(x => x.Name == "payload")?.GetEx<object>();
+            // Buffer to hold content
+            object content = null;
 
-            // If no [content] was given we check if caller supplied a [filename] argument.
-            var file = input.Children.FirstOrDefault(x => x.Name == "filename")?.GetEx<string>();
-            if (content == null && file != null)
+            // Using [payload] node if available.
+            var payloadNode = input.Children.FirstOrDefault(x => x.Name == "payload");
+
+            // Prioritising [content] node.
+            if (payloadNode == null)
             {
+                // If no [content] was given we check if caller supplied a [filename] argument.
+                var filename = input.Children.FirstOrDefault(x => x.Name == "filename")?.GetEx<string>();
+                if (filename == null)
+                    throw new ArgumentException($"No [payload] or [filename] argument supplied to [{input.Name}]");
+
                 // Caller supplied a [filename] argument, hence using it as a stream content object.
-                var rootNode = new Node();
-                signaler.Signal(".io.folder.root", rootNode);
-                var fullpath = rootNode.Get<string>().TrimEnd('/') + "/" + file.TrimStart('/');
+                var rootFolderNode = new Node();
+                signaler.Signal(".io.folder.root", rootFolderNode);
+                var fullpath = rootFolderNode.Get<string>().TrimEnd('/') + "/" + filename.TrimStart('/');
                 if (File.Exists(fullpath))
                     content = File.OpenRead(fullpath);
+                else
+                    throw new ArgumentException($"File supplied as [filename] argument to [{input.Name}] doesn't exist");
             }
+            else
+            {
+                if (payloadNode.Value == null)
+                {
+                    /*
+                     * Checking if caller provided children nodes to [payload],
+                     * at which point we automatically transform from Lambda to JSON.
+                     */
+                    if (!payloadNode.Children.Any())
+                        throw new ArgumentException($"No [payload] value supplied to [{input.Name}]");
 
-            // Sanity checking invocation.
-            if (content == null)
-                throw new ArgumentException($"No [payload] argument supplied to [{input.Name}]");
+                    // Using JSON slots to transform nodes to JSON.
+                    signaler.Signal("lambda2json", payloadNode);
+                    content = payloadNode.Get<object>();
+                }
+                else
+                {
+                    // [payload] is either JSON or an expression leading to JSON.
+                    content = payloadNode?.GetEx<object>();
+                    if (content == null)
+                        throw new ArgumentException($"No [payload] value supplied to [{input.Name}]");
+                }
+            }
 
             // Making sure we support our 3 primary content types.
             if (content is Stream stream)

@@ -16,7 +16,7 @@ in the HTTP Authorization header of your request. If you provide a __[filename]_
 to be a file relatively existing within your _"/files/"_ folder somewhere.
 
 Notice, if you want to have more control over your HTTP request, you can also explicitly add your own
-**[header]** collection, which will become the HTTP request's headers, where the header name is the name
+**[headers]** collection, which will become the HTTP request's headers, where the header name is the name
 of the node, and its value is the value of the node. Below is a simple example of retrieving the document
 found at the specified URL, using a simple GET HTTP request, without neither a **[token]** nor **[header]**
 collection.
@@ -44,6 +44,16 @@ to your endpoint without loading it into memory first.
 ```
 http.post:"https://some-url.com"
    filename:/README.md
+```
+
+You can also supply a lambda object to your endpoint directly instead of JSON, which will by default
+transform your lambda object to JSON before it is sent to the endpoint. Below is an example of the latter.
+
+```
+http.post:"https://jsonplaceholder.typicode.com/posts"
+   payload
+      userId:int:1
+      id:int:1
 ```
 
 ## HTTP headers

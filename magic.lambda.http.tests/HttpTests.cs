@@ -147,11 +147,34 @@ http.post:""https://jsonplaceholder.typicode.com/posts""
         }
 
         [Fact]
+        public async Task PostLambdaAsync()
+        {
+            var lambda = await Common.EvaluateAsync(@"
+http.post:""https://jsonplaceholder.typicode.com/posts""
+   payload
+      userId:int:1
+      id:int:1");
+            Assert.Equal(201, lambda.Children.First().Value);
+        }
+
+        [Fact]
         public void PutJson()
         {
             var lambda = Common.Evaluate(@"
 http.put:""https://jsonplaceholder.typicode.com/posts/1""
    payload:@""{""""userId"""":1, """"id"""":1}""
+");
+            Assert.Equal(200, lambda.Children.First().Value);
+        }
+
+        [Fact]
+        public void PutLambda()
+        {
+            var lambda = Common.Evaluate(@"
+http.put:""https://jsonplaceholder.typicode.com/posts/1""
+   payload
+      userId:int:1
+      id:int:1
 ");
             Assert.Equal(200, lambda.Children.First().Value);
         }
