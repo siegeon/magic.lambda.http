@@ -68,7 +68,8 @@ http.post:"https://jsonplaceholder.typicode.com/posts"
 ```
 
 The above will evaluate the `:x:@.userId` expression, resulting in the integer value of 1, before the lambda
-object is converted to JSON.
+object is converted to JSON. If you want to actually pass in expressions as JSON values, you have to pass
+these in as strings.
 
 ## HTTP headers
 
