@@ -187,55 +187,11 @@ namespace magic.lambda.http.services
             // Using [payload] node if available.
             var payloadNode = input.Children.FirstOrDefault(x => x.Name == "payload");
 
-            // Prioritising [content] node.
-            if (payloadNode == null)
-            {
-                // If no [content] was given we check if caller supplied a [filename] argument.
-                var filename = input.Children.FirstOrDefault(x => x.Name == "filename")?.GetEx<string>();
-                if (filename == null)
-                    throw new ArgumentException($"No [payload] or [filename] argument supplied to [{input.Name}]");
-
-                // Caller supplied a [filename] argument, hence using it as a stream content object.
-                var rootFolderNode = new Node();
-                signaler.Signal(".io.folder.root", rootFolderNode);
-                var fullpath = rootFolderNode.Get<string>().TrimEnd('/') + "/" + filename.TrimStart('/');
-                if (File.Exists(fullpath))
-                    content = File.OpenRead(fullpath);
-                else
-                    throw new ArgumentException($"File supplied as [filename] argument to [{input.Name}] doesn't exist");
-            }
+            // Prioritising [payload] argument.
+            if (payloadNode != null)
+                content = GetRequestContentContent(signaler, input, payloadNode);
             else
-            {
-                if (payloadNode.Value == null)
-                {
-                    /*
-                     * Checking if caller provided children nodes to [payload],
-                     * at which point we automatically transform from Lambda to JSON.
-                     */
-                    if (!payloadNode.Children.Any())
-                        throw new ArgumentException($"No [payload] value supplied to [{input.Name}]");
-
-                    /*
-                     * Automatically [unerap]'ing all nodes, since there are no reasons why you'd want
-                     * to pass in an expression as JSON to any endpoints.
-                     */
-                    foreach (var idx in payloadNode.Children)
-                    {
-                        Unwrap(idx, input.Name);
-                    }
-
-                    // Using JSON slots to transform nodes to JSON.
-                    signaler.Signal("lambda2json", payloadNode);
-                    content = payloadNode.Get<object>();
-                }
-                else
-                {
-                    // [payload] is either JSON or an expression leading to JSON.
-                    content = payloadNode?.GetEx<object>();
-                    if (content == null)
-                        throw new ArgumentException($"No [payload] value supplied to [{input.Name}]");
-                }
-            }
+                content = GetRequestFileContent(signaler, input);
 
             // Making sure we support our 3 primary content types.
             if (content is Stream stream)
@@ -246,10 +202,67 @@ namespace magic.lambda.http.services
         }
 
         /*
+         * Creates an HTTP content object wrapping a file.
+         */
+        static object GetRequestFileContent(ISignaler signaler, Node input)
+        {
+            // If no [content] was given we check if caller supplied a [filename] argument.
+            var filename = input.Children.FirstOrDefault(x => x.Name == "filename")?.GetEx<string>();
+            if (filename == null)
+                throw new ArgumentException($"No [payload] or [filename] argument supplied to [{input.Name}]");
+
+            // Caller supplied a [filename] argument, hence using it as a stream content object.
+            var rootFolderNode = new Node();
+            signaler.Signal(".io.folder.root", rootFolderNode);
+            var fullpath = rootFolderNode.Get<string>().TrimEnd('/') + "/" + filename.TrimStart('/');
+            if (File.Exists(fullpath))
+                return File.OpenRead(fullpath);
+
+            // File doesn't exist.
+            throw new ArgumentException($"File supplied as [filename] argument to [{input.Name}] doesn't exist");
+        }
+
+        /*
+         * Creates an HTTP content object wrapping a file.
+         */
+        static object GetRequestContentContent(ISignaler signaler, Node input, Node payloadNode)
+        {
+            if (payloadNode.Value == null)
+            {
+                /*
+                 * Checking if caller provided children nodes to [payload],
+                 * at which point we automatically transform from Lambda to JSON.
+                 */
+                if (!payloadNode.Children.Any())
+                    throw new ArgumentException($"No [payload] value or children supplied to [{input.Name}]");
+
+                /*
+                 * Automatically [unwrap]'ing all nodes, since there are no reasons why you'd want
+                 * to pass in an expression as JSON token to an endpoint.
+                 */
+                foreach (var idx in payloadNode.Children)
+                {
+                    Unwrap(idx, input.Name);
+                }
+
+                // Using JSON slots to transform nodes to JSON.
+                signaler.Signal("lambda2json", payloadNode);
+                return payloadNode.Get<object>();
+            }
+            else
+            {
+                // [payload] is either JSON or an expression leading to JSON.
+                return payloadNode?.GetEx<object>() ??
+                    throw new ArgumentException($"No [payload] value supplied to [{input.Name}]");
+            }
+        }
+
+        /*
          * Helper method to [unwrap] all nodes passed in as a lambda object.
          */
         static void Unwrap(Node node, string slotName)
         {
+            // Checking if value of node is an expression, and if so, [unwrap]'ign it.
             if (node.Value is Expression)
             {
                 var exp = node.Evaluate();
@@ -257,6 +270,8 @@ namespace magic.lambda.http.services
                     throw new ArgumentException($"Multiple sources found for node in lambda object supplied to [{slotName}]");
                 node.Value = exp.FirstOrDefault()?.Value;
             }
+
+            // Recursively iterating through all children of currently iterated node.
             foreach (var idx in node.Children)
             {
                 Unwrap(idx, slotName);

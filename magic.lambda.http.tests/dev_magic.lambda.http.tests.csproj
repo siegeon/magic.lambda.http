@@ -27,4 +27,11 @@
     <ProjectReference Include="..\..\magic.signals\magic.signals.services\dev_magic.signals.services.csproj" />
     <ProjectReference Include="..\magic.lambda.http\dev_magic.lambda.http.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="test.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

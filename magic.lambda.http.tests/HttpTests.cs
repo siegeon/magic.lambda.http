@@ -147,6 +147,16 @@ http.post:""https://jsonplaceholder.typicode.com/posts""
         }
 
         [Fact]
+        public async Task PostFileAsync()
+        {
+            var lambda = await Common.EvaluateAsync(@"
+http.post:""https://jsonplaceholder.typicode.com/posts""
+   filename:/test.json
+");
+            Assert.Equal(201, lambda.Children.First().Value);
+        }
+
+        [Fact]
         public async Task PostLambdaAsync()
         {
             var lambda = await Common.EvaluateAsync(@"
