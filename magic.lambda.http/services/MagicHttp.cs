@@ -47,14 +47,18 @@ namespace magic.lambda.http.services
         }
 
         /// <inheritdoc />
-        public async Task Invoke(ISignaler signaler, HttpMethod method, Node input)
+        public async Task Invoke(
+            ISignaler signaler,
+            HttpMethod method,
+            Node input)
         {
             // Sanitcy checking invocation.
             if (input.Children.Any(x =>
                 x.Name != "payload" &&
                 x.Name != "filename" &&
                 x.Name != "headers" &&
-                x.Name != "token"))
+                x.Name != "token" &&
+                x.Name != "convert"))
                 throw new ArgumentException($"Only supply [payload], [filename], [headers] and [token] to [{input.Name}]");
 
             /*
@@ -72,22 +76,23 @@ namespace magic.lambda.http.services
                         // Empty request, sanity checking invocation, making sure no [payload] was provided.
                         if (input.Children.Any(x => x.Name == "payload" || x.Name == "filename"))
                             throw new ArgumentException($"Do not supply a [payload] or [filename] argument to [{input.Name}]");
+
                         using (var response = await _client.SendAsync(request))
                         {
-                            await GetResponse(response, input);
+                            await GetResponse(signaler, response, input);
                         }
                         break;
 
                     default:
 
                         // Content request, implying 'PUT', 'POST' or 'DELETE' request.
-                        using (var content = GetRequestContent(signaler, input))
+                        using (var content = GetRequestContent(signaler, input, headers))
                         {
                             AddContentHeaders(content, headers);
                             request.Content = content;
                             using (var response = await _client.SendAsync(request))
                             {
-                                await GetResponse(response, input);
+                                await GetResponse(signaler, response, input);
                             }
                         }
                         break;
@@ -179,7 +184,10 @@ namespace magic.lambda.http.services
         /*
          * Creates an HTTP content object for HTTP invocations requiring such things (POST, PUT and PATCH).
          */
-        static HttpContent GetRequestContent(ISignaler signaler, Node input)
+        static HttpContent GetRequestContent(
+            ISignaler signaler,
+            Node input,
+            Dictionary<string, string> headers)
         {
             // Buffer to hold content
             object content = null;
@@ -189,7 +197,7 @@ namespace magic.lambda.http.services
 
             // Prioritising [payload] argument.
             if (payloadNode != null)
-                content = GetRequestContentContent(signaler, input, payloadNode);
+                content = GetRequestContentContent(signaler, input, payloadNode, headers);
             else
                 content = GetRequestFileContent(signaler, input);
 
@@ -225,9 +233,16 @@ namespace magic.lambda.http.services
         /*
          * Creates an HTTP content object wrapping a file.
          */
-        static object GetRequestContentContent(ISignaler signaler, Node input, Node payloadNode)
+        static object GetRequestContentContent(
+            ISignaler signaler,
+            Node input,
+            Node payloadNode,
+            Dictionary<string, string> headers)
         {
-            if (payloadNode.Value == null)
+            // Notice, we only transform lambda objects to JSON if Content-Type is "application/json"
+            if (payloadNode.Value == null &&
+                headers.ContainsKey("Content-Type") &&
+                headers["Content-Type"].StartsWith("application/json"))
             {
                 /*
                  * Checking if caller provided children nodes to [payload],
@@ -313,8 +328,14 @@ namespace magic.lambda.http.services
          * Extracts the response content from the specified response message, and
          * puts it into the specified node.
          */
-        static async Task GetResponse(HttpResponseMessage response, Node result)
+        static async Task GetResponse(
+            ISignaler signaler,
+            HttpResponseMessage response,
+            Node result)
         {
+            // Checking if caller wants to automatically convert result to lambda.
+            var convert = result.Children.FirstOrDefault(x => x.Name == "convert")?.GetEx<bool>() ?? false;
+
             // House cleaning.
             result.Clear();
 
@@ -337,6 +358,10 @@ namespace magic.lambda.http.services
                         headers.Add(new Node(idx.Key, string.Join(";", idx.Value)));
                     }
                     result.Add(headers);
+
+                    // Verifying caller wants to convert, and Content-Type is "application/json", and if so we convert automatically to lambda.
+                    convert = convert &&
+                        (headers.Children.FirstOrDefault(x => x.Name == "Content-Type")?.Get<string>()?.StartsWith("application/json") ?? false);
                 }
 
                 // HTTP content, defaulting Content-Type to 'application/json'.
@@ -349,12 +374,26 @@ namespace magic.lambda.http.services
                 switch (contentType)
                 {
                     // Common text types of MIME types.
-                    case "application/json":
                     case "application/x-www-form-urlencoded":
                     case "application/x-hyperlambda":
                     case "application/rss+xml":
                     case "application/xml":
                         result.Add(new Node("content", await content.ReadAsStringAsync()));
+                        break;
+
+                    // JSON MIME type.
+                    case "application/json":
+                        var json = await content.ReadAsStringAsync();
+                        if (convert)
+                        {
+                            var tmpNode = new Node("", json);
+                            signaler.Signal("json2lambda", tmpNode);
+                            result.Add(new Node("content", null, tmpNode.Children.ToList()));
+                        }
+                        else
+                        {
+                            result.Add(new Node("content", json));
+                        }
                         break;
 
                     // Anything but the above.

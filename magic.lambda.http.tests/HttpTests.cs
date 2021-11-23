@@ -168,6 +168,19 @@ http.post:""https://jsonplaceholder.typicode.com/posts""
         }
 
         [Fact]
+        public async Task PostLambdaAsyncAutoConvert()
+        {
+            var lambda = await Common.EvaluateAsync(@"
+http.post:""https://jsonplaceholder.typicode.com/posts""
+   convert:true
+   payload
+      userId:int:1
+      id:int:1");
+            Assert.Equal(201, lambda.Children.First().Value);
+            Assert.Equal(2, lambda.Children.First().Children.FirstOrDefault(x => x.Name == "content").Children.Count());
+        }
+
+        [Fact]
         public void PutJson()
         {
             var lambda = Common.Evaluate(@"

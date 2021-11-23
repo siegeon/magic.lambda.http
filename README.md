@@ -25,6 +25,18 @@ collection.
 http.get:"https://google.com"
 ```
 
+**Notice** - You can also automatically convert the result to a lambda object, if the response is returned
+as `application/json`, and you provide a **[convert]** argument, and set its value to boolean `true`. This
+is true for both GET, DELETE, POST, PUT and PATCH invocations. Below is an example.
+
+```
+http.post:"https://jsonplaceholder.typicode.com/posts"
+   convert:true
+   payload
+      userId:int:5
+      id:int:1
+```
+
 ## POSTing, PUTting, and PATCHing data
 
 The POST, PUT and PATCH slots, requires a **[payload]** argument, or a **[filename]** argument,
