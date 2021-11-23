@@ -57,8 +57,7 @@ http.post:"https://jsonplaceholder.typicode.com/posts"
 ```
 
 **Notice** - If you pass in a lambda object as illustrated above, then all expressions in all nodes inside
-of your **[payload]** argument will be automatically evaluated and _"unwrapped"_. Consider the following to
-understand.
+of your **[payload]** argument will be automatically evaluated and _"unwrapped"_. Consider the following.
 
 ```
 .userId:int:1
