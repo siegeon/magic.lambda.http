@@ -30,11 +30,8 @@ as `application/json`, and you provide a **[convert]** argument, and set its val
 is true for both GET, DELETE, POST, PUT and PATCH invocations. Below is an example.
 
 ```
-http.post:"https://jsonplaceholder.typicode.com/posts"
+http.get:"https://jsonplaceholder.typicode.com/posts"
    convert:true
-   payload
-      userId:int:5
-      id:int:1
 ```
 
 ## POSTing, PUTting, and PATCHing data
