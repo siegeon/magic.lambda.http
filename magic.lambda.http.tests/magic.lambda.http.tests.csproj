@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\magic.lambda.io\magic.lambda.io\magic.lambda.io.csproj" />
+    <PackageReference Include="magic.lambda.io" Version="9.9.4" />
     <ProjectReference Include="..\magic.lambda.http\magic.lambda.http.csproj" />
   </ItemGroup>
 
