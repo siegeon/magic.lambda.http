@@ -16,7 +16,7 @@ namespace magic.lambda.http
     [Slot(Name = "http.patch")]
     public class HttpPatch : ISlot, ISlotAsync
     {
-        IMagicHttp _service;
+        readonly IMagicHttp _service;
 
         /// <summary>
         /// Creates an instance of your class.
