@@ -5,8 +5,8 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageId>magic.lambda.http</PackageId>
     <Authors>Thomas Hansen</Authors>
-    <Company>Thomas Hansen</Company>
-    <Copyright>Thomas Hansen, thomas@servergardens.com</Copyright>
+    <Company>Aista, Ltd</Company>
+    <Copyright>Aista, Ltd, thomas@servergardens.com</Copyright>
     <Description>HTTP lambda helpers for Magic, allowing you to invoke HTTP REST endpoints using Magic and Hyperlambda. To use package go to https://polterguy.github.io</Description>
     <PackageProjectUrl>https://github.com/polterguy/magic.lambda.http</PackageProjectUrl>
     <PackOnBuild>true</PackOnBuild>
@@ -14,7 +14,7 @@
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/polterguy/magic.lambda.http.git</RepositoryUrl>
-    <PackageTags>http, rest, api, json, web, HttpClient, async</PackageTags>
+    <PackageTags>http, rest, api, json, web, HttpClient, hyperlambda</PackageTags>
     <PublishRepositoryUrl>true</PublishRepositoryUrl>
     <IncludeSymbols>true</IncludeSymbols>
     <SymbolPackageFormat>snupkg</SymbolPackageFormat>
