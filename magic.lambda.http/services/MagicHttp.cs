@@ -71,13 +71,16 @@ namespace magic.lambda.http.services
                     "application/x-www-form-urlencoded",
                     (signaler, payloadNode, slotName) =>
                     {
+                        // Creating a URL encoded request payload body.
                         var builder = new StringBuilder();
                         foreach (var idx in payloadNode.Children)
                         {
                             if (idx.Children.Any())
                                 throw new ArgumentException($"'application/x-www-form-urlencoded' requests can only handle one level of arguments, and node '{idx.Name}' had children");
+
                             if (builder.Length > 0)
                                 builder.Append("&");
+
                             builder.Append(idx.Name).Append("=").Append(HttpUtility.UrlEncode(idx.GetEx<string>()));
                         }
                         return builder.ToString();
@@ -187,6 +190,7 @@ namespace magic.lambda.http.services
                 {
                     case "get":
                     case "delete":
+
                         foreach (var idx in DEFAULT_HEADERS_EMPTY_REQUEST)
                         {
                             headers[idx.Key] = idx.Value;
@@ -194,6 +198,7 @@ namespace magic.lambda.http.services
                         break;
 
                     default:
+
                         foreach (var idx in DEFAULT_HEADERS_REQUEST)
                         {
                             headers[idx.Key] = idx.Value;
@@ -436,11 +441,13 @@ namespace magic.lambda.http.services
                     case "application/x-hyperlambda":
                     case "application/rss+xml":
                     case "application/xml":
+
                         result.Add(new Node("content", await content.ReadAsStringAsync()));
                         break;
 
                     // JSON MIME type.
                     case "application/json":
+
                         var json = await content.ReadAsStringAsync();
                         if (convert)
                         {
