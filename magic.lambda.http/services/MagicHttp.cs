@@ -151,6 +151,17 @@ namespace magic.lambda.http.services
             }
         }
 
+        /// <summary>
+        /// Registers a semantic request Content-Type handler allowing you to transform from a lambda object
+        /// to some sort of request content object automatically.
+        /// </summary>
+        /// <param name="contentType">Content-Type to handle</param>
+        /// <param name="functor">Function to create a request object for Content-Type</param>
+        public static void AddRequestHandler(string contentType, Func<ISignaler, Node, string, object> functor)
+        {
+            _transformers[contentType] = functor;
+        }
+
         #region [ -- Private helper methods -- ]
 
         /*
