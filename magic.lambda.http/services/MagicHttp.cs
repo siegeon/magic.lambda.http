@@ -4,7 +4,9 @@
 
 using System;
 using System.IO;
+using System.Web;
 using System.Linq;
+using System.Text;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -34,6 +36,55 @@ namespace magic.lambda.http.services
                 { "Accept", "application/json" },
             };
         
+        // Lambda to request object converters, to semantically transform from a lambda object to an object value of some sort.
+        readonly static Dictionary<string, Func<ISignaler, Node, string, object>> _transformers =
+            new Dictionary<string, Func<ISignaler, Node, string, object>>
+            {
+                {
+                    "application/json",
+                    (signaler, payloadNode, slotName) =>
+                    {
+                        /*
+                         * Automatically [unwrap]'ing all nodes, since there are no reasons why you'd want
+                         * to pass in an expression as JSON token to an endpoint.
+                         */
+                        foreach (var idx in payloadNode.Children)
+                        {
+                            Unwrap(idx, slotName, true);
+                        }
+
+                        // Using JSON slot to transform nodes to JSON.
+                        signaler.Signal("lambda2json", payloadNode);
+                        return payloadNode.Value;
+                    }
+                },
+                {
+                    "application/x-hyperlambda",
+                    (signaler, payloadNode, slotName) =>
+                    {
+                        // Using Hyperlambda slot to transform nodes to string.
+                        signaler.Signal("lambda2hyper", payloadNode);
+                        return payloadNode.Value;
+                    }
+                },
+                {
+                    "application/x-www-form-urlencoded",
+                    (signaler, payloadNode, slotName) =>
+                    {
+                        var builder = new StringBuilder();
+                        foreach (var idx in payloadNode.Children)
+                        {
+                            if (idx.Children.Any())
+                                throw new ArgumentException($"'application/x-www-form-urlencoded' requests can only handle one level of arguments, and node '{idx.Name}' had children");
+                            if (builder.Length > 0)
+                                builder.Append("&");
+                            builder.Append(idx.Name).Append("=").Append(HttpUtility.UrlEncode(idx.GetEx<string>()));
+                        }
+                        return builder.ToString();
+                    }
+                },
+            };
+
         // Dependency injected HttpClient instance.
         readonly HttpClient _client;
 
@@ -59,7 +110,7 @@ namespace magic.lambda.http.services
                 x.Name != "headers" &&
                 x.Name != "token" &&
                 x.Name != "convert"))
-                throw new ArgumentException($"Only supply [payload], [filename], [headers] and [token] to [{input.Name}]");
+                throw new ArgumentException($"Only supply [payload], [filename], [headers], [convert] and [token] to [{input.Name}]");
 
             /*
              * Strictly speaking it should not be necessary to dispose client,
@@ -210,6 +261,41 @@ namespace magic.lambda.http.services
         }
 
         /*
+         * Creates an HTTP content object from some sort of inline, and/or stream content object.
+         */
+        static object GetRequestContentContent(
+            ISignaler signaler,
+            Node input,
+            Node payloadNode,
+            Dictionary<string, string> headers)
+        {
+            // Checking if caller supplied a [payload] value or not, alternatives are structured lambda object.
+            if (payloadNode.Value == null)
+            {
+                // Verifying user supplied some sort of structured lambda object type of content.
+                if (!payloadNode.Children.Any())
+                    throw new ArgumentException($"No [payload] value or children supplied to [{input.Name}]");
+
+                // Figuring out Content-Type of request payload to make sure we correctly transform into the specified value.
+                var contentType = headers.ContainsKey("Content-Type") ?
+                    headers["Content-Type"]?.Split(';').First().Trim() ?? "application/json" :
+                    "application/json";
+
+                if (_transformers.TryGetValue(contentType, out var functor))
+                    return functor(signaler, payloadNode, input.Name);
+
+                // No transformer for specified Content-Type exists.
+                throw new ArgumentException($"I don't know how to transform a lambda object to Content-Type of '{contentType}'");
+            }
+            else
+            {
+                // [payload] contains a value object of some sort.
+                return payloadNode?.GetEx<object>() ??
+                    throw new ArgumentException($"No [payload] value supplied to [{input.Name}]");
+            }
+        }
+
+        /*
          * Creates an HTTP content object wrapping a file.
          */
         static object GetRequestFileContent(ISignaler signaler, Node input)
@@ -231,51 +317,9 @@ namespace magic.lambda.http.services
         }
 
         /*
-         * Creates an HTTP content object wrapping a file.
-         */
-        static object GetRequestContentContent(
-            ISignaler signaler,
-            Node input,
-            Node payloadNode,
-            Dictionary<string, string> headers)
-        {
-            // Notice, we only transform lambda objects to JSON if Content-Type is "application/json"
-            if (payloadNode.Value == null &&
-                headers.ContainsKey("Content-Type") &&
-                headers["Content-Type"].StartsWith("application/json"))
-            {
-                /*
-                 * Checking if caller provided children nodes to [payload],
-                 * at which point we automatically transform from Lambda to JSON.
-                 */
-                if (!payloadNode.Children.Any())
-                    throw new ArgumentException($"No [payload] value or children supplied to [{input.Name}]");
-
-                /*
-                 * Automatically [unwrap]'ing all nodes, since there are no reasons why you'd want
-                 * to pass in an expression as JSON token to an endpoint.
-                 */
-                foreach (var idx in payloadNode.Children)
-                {
-                    Unwrap(idx, input.Name);
-                }
-
-                // Using JSON slots to transform nodes to JSON.
-                signaler.Signal("lambda2json", payloadNode);
-                return payloadNode.Get<object>();
-            }
-            else
-            {
-                // [payload] is either JSON or an expression leading to JSON.
-                return payloadNode?.GetEx<object>() ??
-                    throw new ArgumentException($"No [payload] value supplied to [{input.Name}]");
-            }
-        }
-
-        /*
          * Helper method to [unwrap] all nodes passed in as a lambda object.
          */
-        static void Unwrap(Node node, string slotName)
+        static void Unwrap(Node node, string slotName, bool recurse)
         {
             // Checking if value of node is an expression, and if so, [unwrap]'ign it.
             if (node.Value is Expression)
@@ -286,10 +330,13 @@ namespace magic.lambda.http.services
                 node.Value = exp.FirstOrDefault()?.Value;
             }
 
-            // Recursively iterating through all children of currently iterated node.
-            foreach (var idx in node.Children)
+            // Recursively iterating through all children of currently iterated node, but only if caller wants us to.
+            if (recurse)
             {
-                Unwrap(idx, slotName);
+                foreach (var idx in node.Children)
+                {
+                    Unwrap(idx, slotName, recurse);
+                }
             }
         }
 

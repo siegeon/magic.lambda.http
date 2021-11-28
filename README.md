@@ -80,12 +80,18 @@ The above will evaluate the `:x:@.userId` expression, resulting in the integer v
 object is converted to JSON. If you want to actually pass in expressions as JSON values, you have to pass
 these in as strings.
 
+The above way of _"semantically"_ declare a payload as a lambda object works for the following types.
+
+* `application/json` - The default Content-Type of any requests unless explicitly overridden. This will evaluate/unwrap expressions in your **[payload]**.
+* `application/x-hyperlambda` - Hyperlambda content. This will _not_ evaluate any expressions in your **[payload]**.
+* `application/x-www-form-urlencoded` - Works similarly to the JSON equivalent, but can _only_ accept one level of arguments. This will evaluate expressions in **[payload]**.
+
 ## HTTP headers
 
 Below is another example invoking DELETE with an explicit **[headers]** collection.
 
 ```
-http.delete:"https://foo-url.com"
+http.delete:"https://foo-url.com/foo/1"
    headers
       Accept:application/zip
       X-Foo:Bar-Header-Value
