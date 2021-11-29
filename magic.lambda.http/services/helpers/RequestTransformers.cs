@@ -57,7 +57,7 @@ namespace magic.lambda.http.services.helpers
             foreach (var idx in payloadNode.Children)
             {
                 if (idx.Children.Any())
-                    throw new ArgumentException($"'application/x-www-form-urlencoded' requests can only handle one level of arguments, and node '{idx.Name}' had children");
+                    throw new HyperlambdaException($"'application/x-www-form-urlencoded' requests can only handle one level of arguments, and node '{idx.Name}' had children");
 
                 if (builder.Length > 0)
                     builder.Append("&");
@@ -79,7 +79,7 @@ namespace magic.lambda.http.services.helpers
             {
                 var exp = node.Evaluate();
                 if (exp.Count() > 1)
-                    throw new ArgumentException($"Multiple sources found for node in lambda object supplied to [{slotName}]");
+                    throw new HyperlambdaException($"Multiple sources found for node in lambda object supplied to [{slotName}]");
                 node.Value = exp.FirstOrDefault()?.Value;
             }
 

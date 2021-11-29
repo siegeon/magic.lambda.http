@@ -3,12 +3,11 @@
  * Magic Cloud, copyright Aista, Ltd. See the attached LICENSE file for details.
  */
 
-using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Xunit;
-using magic.node.extensions;
 using Newtonsoft.Json.Linq;
+using magic.node.extensions;
 
 namespace magic.lambda.http.tests
 {
@@ -32,7 +31,7 @@ http.get:""https://jsonplaceholder.typicode.com/users/1""
         [Fact]
         public void Throws_01()
         {
-            Assert.Throws<ArgumentException>(() => Common.Evaluate(@"
+            Assert.Throws<HyperlambdaException>(() => Common.Evaluate(@"
 http.get:""https://jsonplaceholder.typicode.com/users/1""
    token:foo
    foo:throws
@@ -42,7 +41,7 @@ http.get:""https://jsonplaceholder.typicode.com/users/1""
         [Fact]
         public void Throws_02()
         {
-            Assert.Throws<ArgumentException>(() => Common.Evaluate(@"
+            Assert.Throws<HyperlambdaException>(() => Common.Evaluate(@"
 http.post:""https://jsonplaceholder.typicode.com/users/1""
    token:foo
    paylod:howdy
@@ -53,7 +52,7 @@ http.post:""https://jsonplaceholder.typicode.com/users/1""
         [Fact]
         public void Throws_03()
         {
-            Assert.Throws<ArgumentException>(() => Common.Evaluate(@"
+            Assert.Throws<HyperlambdaException>(() => Common.Evaluate(@"
 http.post:""https://jsonplaceholder.typicode.com/users/1""
    token:foo
    foo:throws
@@ -63,7 +62,7 @@ http.post:""https://jsonplaceholder.typicode.com/users/1""
         [Fact]
         public void Throws_04()
         {
-            Assert.Throws<ArgumentException>(() => Common.Evaluate(@"
+            Assert.Throws<HyperlambdaException>(() => Common.Evaluate(@"
 http.get:""https://jsonplaceholder.typicode.com/users/1""
    foo:throws
 "));
@@ -72,7 +71,7 @@ http.get:""https://jsonplaceholder.typicode.com/users/1""
         [Fact]
         public void GetJsonPayload_Throws()
         {
-            Assert.Throws<ArgumentException>(() => Common.Evaluate(@"
+            Assert.Throws<HyperlambdaException>(() => Common.Evaluate(@"
 http.get:""https://jsonplaceholder.typicode.com/users/1""
    payload:foo
 "));
@@ -131,7 +130,7 @@ http.post:""https://jsonplaceholder.typicode.com/postsXX""
         [Fact]
         public void PostJsonNoPayload_Throws()
         {
-            Assert.Throws<ArgumentException>(() => Common.Evaluate(@"
+            Assert.Throws<HyperlambdaException>(() => Common.Evaluate(@"
 http.post:""https://jsonplaceholder.typicode.com/posts""
 "));
         }
@@ -218,7 +217,7 @@ http.put:""https://jsonplaceholder.typicode.com/posts/1""
         [Fact]
         public void PutJsonNoPayload_Throws()
         {
-            Assert.Throws<ArgumentException>(() => Common.Evaluate(@"
+            Assert.Throws<HyperlambdaException>(() => Common.Evaluate(@"
 http.put:""https://jsonplaceholder.typicode.com/posts/1""
 "));
         }
@@ -245,7 +244,7 @@ http.delete:""https://jsonplaceholder.typicode.com/posts/1""
         [Fact]
         public void DeleteJsonPayload_Throws()
         {
-            Assert.Throws<ArgumentException>(() => Common.Evaluate(@"
+            Assert.Throws<HyperlambdaException>(() => Common.Evaluate(@"
 http.delete:""https://jsonplaceholder.typicode.com/posts/1""
    payload:foo
 "));

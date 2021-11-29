@@ -108,7 +108,7 @@ namespace magic.lambda.http.services
                 x.Name != "headers" &&
                 x.Name != "token" &&
                 x.Name != "convert"))
-                throw new ArgumentException($"Only supply [payload], [filename], [headers], [convert] and [token] to [{input.Name}]");
+                throw new HyperlambdaException($"Only supply [payload], [filename], [headers], [convert] and [token] to [{input.Name}]");
 
             /*
              * Strictly speaking it should not be necessary to dispose client,
@@ -124,7 +124,7 @@ namespace magic.lambda.http.services
 
                         // Empty request, sanity checking invocation, making sure no [payload] was provided.
                         if (input.Children.Any(x => x.Name == "payload" || x.Name == "filename"))
-                            throw new ArgumentException($"Do not supply a [payload] or [filename] argument to [{input.Name}]");
+                            throw new HyperlambdaException($"Do not supply a [payload] or [filename] argument to [{input.Name}]");
 
                         using (var response = await _client.SendAsync(request))
                         {
@@ -241,7 +241,7 @@ namespace magic.lambda.http.services
                         // These HTTP headers we simply ignore, since they're added to the content object later.
                         // However, if such headers are added to GET or DELETE invocation, it's considered a bug.
                         if (method.Method.ToLowerInvariant() == "get" || method.Method.ToLowerInvariant() == "delete")
-                            throw new ArgumentException($"You cannot decorate an HTTP GET or DELETE request with content type of headers");
+                            throw new HyperlambdaException($"You cannot decorate an HTTP GET or DELETE request with content type of headers");
                         break;
 
                     default:
@@ -296,7 +296,7 @@ namespace magic.lambda.http.services
             {
                 // Verifying user supplied some sort of structured lambda object type of content.
                 if (!payloadNode.Children.Any())
-                    throw new ArgumentException($"No [payload] value or children supplied to [{input.Name}]");
+                    throw new HyperlambdaException($"No [payload] value or children supplied to [{input.Name}]");
 
                 // Figuring out Content-Type of request payload to make sure we correctly transform into the specified value.
                 var contentType = headers.ContainsKey("Content-Type") ?
@@ -307,13 +307,13 @@ namespace magic.lambda.http.services
                     return functor(signaler, payloadNode, input.Name);
 
                 // No transformer for specified Content-Type exists.
-                throw new ArgumentException($"I don't know how to transform a lambda object to Content-Type of '{contentType}'");
+                throw new HyperlambdaException($"I don't know how to transform a lambda object to Content-Type of '{contentType}'");
             }
             else
             {
                 // [payload] contains a value object of some sort.
                 return payloadNode?.GetEx<object>() ??
-                    throw new ArgumentException($"No [payload] value supplied to [{input.Name}]");
+                    throw new HyperlambdaException($"No [payload] value supplied to [{input.Name}]");
             }
         }
 
@@ -325,7 +325,7 @@ namespace magic.lambda.http.services
             // If no [content] was given we check if caller supplied a [filename] argument.
             var filename = input.Children.FirstOrDefault(x => x.Name == "filename")?.GetEx<string>();
             if (filename == null)
-                throw new ArgumentException($"No [payload] or [filename] argument supplied to [{input.Name}]");
+                throw new HyperlambdaException($"No [payload] or [filename] argument supplied to [{input.Name}]");
 
             // Caller supplied a [filename] argument, hence using it as a stream content object.
             var rootFolderNode = new Node();
@@ -335,7 +335,7 @@ namespace magic.lambda.http.services
                 return File.OpenRead(fullpath);
 
             // File doesn't exist.
-            throw new ArgumentException($"File supplied as [filename] argument to [{input.Name}] doesn't exist");
+            throw new HyperlambdaException($"File supplied as [filename] argument to [{input.Name}] doesn't exist");
         }
 
         /*
