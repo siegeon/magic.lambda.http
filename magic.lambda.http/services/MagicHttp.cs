@@ -6,7 +6,6 @@ using System;
 using System.IO;
 using System.Web;
 using System.Linq;
-using System.Text;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Collections.Generic;
@@ -14,6 +13,7 @@ using magic.node;
 using magic.node.extensions;
 using magic.signals.contracts;
 using magic.lambda.http.contracts;
+using magic.lambda.http.services.helpers;
 
 namespace magic.lambda.http.services
 {
@@ -37,56 +37,52 @@ namespace magic.lambda.http.services
             };
         
         // Lambda to request object converters, to semantically transform from a lambda object to an object value of some sort.
-        readonly static Dictionary<string, Func<ISignaler, Node, string, object>> _transformers =
+        readonly static Dictionary<string, Func<ISignaler, Node, string, object>> _requestTransformers =
             new Dictionary<string, Func<ISignaler, Node, string, object>>
             {
                 {
-                    "application/json",
-                    (signaler, payloadNode, slotName) =>
-                    {
-                        /*
-                         * Automatically [unwrap]'ing all nodes, since there are no reasons why you'd want
-                         * to pass in an expression as JSON token to an endpoint.
-                         */
-                        foreach (var idx in payloadNode.Children)
-                        {
-                            Unwrap(idx, slotName, true);
-                        }
-
-                        // Using JSON slot to transform nodes to JSON.
-                        signaler.Signal("lambda2json", payloadNode);
-                        return payloadNode.Value;
-                    }
+                    "application/json", RequestTransformers.TransformToJson
                 },
                 {
-                    "application/x-hyperlambda",
-                    (signaler, payloadNode, slotName) =>
-                    {
-                        // Using Hyperlambda slot to transform nodes to string.
-                        signaler.Signal("lambda2hyper", payloadNode);
-                        return payloadNode.Value;
-                    }
+                    "application/x-json", RequestTransformers.TransformToJson
                 },
                 {
-                    "application/x-www-form-urlencoded",
-                    (signaler, payloadNode, slotName) =>
-                    {
-                        // Creating a URL encoded request payload body.
-                        var builder = new StringBuilder();
-                        foreach (var idx in payloadNode.Children)
-                        {
-                            if (idx.Children.Any())
-                                throw new ArgumentException($"'application/x-www-form-urlencoded' requests can only handle one level of arguments, and node '{idx.Name}' had children");
-
-                            if (builder.Length > 0)
-                                builder.Append("&");
-
-                            builder.Append(idx.Name).Append("=").Append(HttpUtility.UrlEncode(idx.GetEx<string>()));
-                        }
-                        return builder.ToString();
-                    }
+                    "application/hyperlambda", RequestTransformers.TransformToHyperlambda
+                },
+                {
+                    "application/x-hyperlambda", RequestTransformers.TransformToHyperlambda
+                },
+                {
+                    "application/www-form-urlencoded", RequestTransformers.TransformToUrlEncoded
+                },
+                {
+                    "application/x-www-form-urlencoded", RequestTransformers.TransformToUrlEncoded
                 },
             };
+        
+        // Response object to lambda converters, to semantically transform from a response object to a lambda object.
+        readonly static Dictionary<string, Func<ISignaler, HttpContent, Task<Node>>> _responseTransformers =
+            new Dictionary<string, Func<ISignaler, HttpContent, Task<Node>>>
+        {
+            {
+                "application/json", ResponseTransformers.TransformFromJson
+            },
+            {
+                "application/x-json", ResponseTransformers.TransformFromJson
+            },
+            {
+                "application/hyperlambda", ResponseTransformers.TransformFromHyperlambda
+            },
+            {
+                "application/x-hyperlambda", ResponseTransformers.TransformFromHyperlambda
+            },
+            {
+                "application/www-form-urlencoded", ResponseTransformers.TransformFromUrlEncoded
+            },
+            {
+                "application/x-www-form-urlencoded", ResponseTransformers.TransformFromUrlEncoded
+            },
+        };
 
         // Dependency injected HttpClient instance.
         readonly HttpClient _client;
@@ -162,7 +158,18 @@ namespace magic.lambda.http.services
         /// <param name="functor">Function to create a request object for Content-Type</param>
         public static void AddRequestHandler(string contentType, Func<ISignaler, Node, string, object> functor)
         {
-            _transformers[contentType] = functor;
+            _requestTransformers[contentType] = functor;
+        }
+
+        /// <summary>
+        /// Registers a semantic response Content-Type handler allowing you to transform from a content object
+        /// to a lambda object automatically.
+        /// </summary>
+        /// <param name="contentType">Content-Type to handle</param>
+        /// <param name="functor">Function to create a lambda object for Content-Type</param>
+        public static void AddResponseHandler(string contentType, Func<ISignaler, HttpContent, Task<Node>> functor)
+        {
+            _responseTransformers[contentType] = functor;
         }
 
         #region [ -- Private helper methods -- ]
@@ -297,7 +304,7 @@ namespace magic.lambda.http.services
                     headers["Content-Type"]?.Split(';').First().Trim() ?? "application/json" :
                     "application/json";
 
-                if (_transformers.TryGetValue(contentType, out var functor))
+                if (_requestTransformers.TryGetValue(contentType, out var functor))
                     return functor(signaler, payloadNode, input.Name);
 
                 // No transformer for specified Content-Type exists.
@@ -330,30 +337,6 @@ namespace magic.lambda.http.services
 
             // File doesn't exist.
             throw new ArgumentException($"File supplied as [filename] argument to [{input.Name}] doesn't exist");
-        }
-
-        /*
-         * Helper method to [unwrap] all nodes passed in as a lambda object.
-         */
-        static void Unwrap(Node node, string slotName, bool recurse)
-        {
-            // Checking if value of node is an expression, and if so, [unwrap]'ign it.
-            if (node.Value is Expression)
-            {
-                var exp = node.Evaluate();
-                if (exp.Count() > 1)
-                    throw new ArgumentException($"Multiple sources found for node in lambda object supplied to [{slotName}]");
-                node.Value = exp.FirstOrDefault()?.Value;
-            }
-
-            // Recursively iterating through all children of currently iterated node, but only if caller wants us to.
-            if (recurse)
-            {
-                foreach (var idx in node.Children)
-                {
-                    Unwrap(idx, slotName, recurse);
-                }
-            }
         }
 
         /*
@@ -408,68 +391,38 @@ namespace magic.lambda.http.services
             // Ensuring we clean up after ourselves.
             using (var content = response.Content)
             {
+                // HTTP content, defaulting Content-Type to 'application/json' unless explicitly overridden by endpoint.
+                var contentType = "application/json";
+
                 // HTTP headers.
                 if (response.Headers.Any() || content.Headers.Any())
                 {
                     var headers = new Node("headers");
                     foreach (var idx in response.Headers)
                     {
-                        headers.Add(new Node(idx.Key, string.Join(";", idx.Value)));
+                        headers.Add(new Node(idx.Key, string.Join(", ", idx.Value)));
                     }
                     foreach (var idx in content.Headers)
                     {
-                        headers.Add(new Node(idx.Key, string.Join(";", idx.Value)));
+                        if (idx.Key.ToLowerInvariant() == "content-type")
+                            contentType = idx.Value.First().Split(';').First();
+                        headers.Add(new Node(idx.Key, string.Join(", ", idx.Value)));
                     }
                     result.Add(headers);
-
-                    // Verifying caller wants to convert, and Content-Type is "application/json", and if so we convert automatically to lambda.
-                    convert = convert &&
-                        (headers.Children.FirstOrDefault(x => x.Name == "Content-Type")?.Get<string>()?.StartsWith("application/json") ?? false);
                 }
 
-                // HTTP content, defaulting Content-Type to 'application/json'.
-                var contentType = "application/json";
-                if (content.Headers.Any(x => x.Key.ToLowerInvariant() == "content-type"))
+                // Checking if caller wants to automatically convert and if we've got response converters registered for Content-Type.
+                if (convert && _responseTransformers.TryGetValue(contentType, out var functor))
                 {
-                    var rawHeader = content.Headers.First(x => x.Key.ToLowerInvariant() == "content-type");
-                    contentType = rawHeader.Value.First()?.Split(';')?.FirstOrDefault() ?? "application/json";
+                    result.Add(await functor(signaler, content));
                 }
-                switch (contentType)
+                else
                 {
-                    // Common text types of MIME types.
-                    case "application/x-www-form-urlencoded":
-                    case "application/x-hyperlambda":
-                    case "application/rss+xml":
-                    case "application/xml":
-
+                    // Checking if this MIME type starts with "text/" something, at which point we treat it as text.
+                    if (contentType.StartsWith("text/"))
                         result.Add(new Node("content", await content.ReadAsStringAsync()));
-                        break;
-
-                    // JSON MIME type.
-                    case "application/json":
-
-                        var json = await content.ReadAsStringAsync();
-                        if (convert)
-                        {
-                            var tmpNode = new Node("", json);
-                            signaler.Signal("json2lambda", tmpNode);
-                            result.Add(new Node("content", null, tmpNode.Children.ToList()));
-                        }
-                        else
-                        {
-                            result.Add(new Node("content", json));
-                        }
-                        break;
-
-                    // Anything but the above.
-                    default:
-
-                        // Checking if this MIME type starts with "text/" something, at which point we treat it as text.
-                        if (contentType.StartsWith("text/"))
-                            result.Add(new Node("content", await content.ReadAsStringAsync()));
-                        else
-                            result.Add(new Node("content", await content.ReadAsByteArrayAsync()));
-                        break;
+                    else
+                        result.Add(new Node("content", await content.ReadAsByteArrayAsync()));
                 }
             }
         }
