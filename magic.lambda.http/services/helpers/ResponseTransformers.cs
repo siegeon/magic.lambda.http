@@ -47,7 +47,7 @@ namespace magic.lambda.http.services.helpers
          */
         internal static async Task<Node> TransformFromUrlEncoded(ISignaler signaler, HttpContent content)
         {
-            var args = (await content.ReadAsStringAsync())?.Split('&');
+            var args = (await content.ReadAsStringAsync()).Split('&');
             var result = new Node("content");
             foreach (var idxArg in args)
             {
