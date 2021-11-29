@@ -33,9 +33,9 @@ http.get:int:200
    content:"... content here ..."
 ```
 
-The status code of the reuqest is returned as the value of **[http.get]**, headers returned by server can
-be found in **[headers]** as a key/value pair, and **[content]** contains the actual content response
-returned by the server.
+The status code of the request is returned as the value of **[http.xxx]**, headers returned by the server
+can be found in **[headers]** as a key/value pair, and **[content]** contains the actual content response
+object returned by the server.
 
 ## HTTP headers
 
@@ -110,15 +110,15 @@ http.get:int:200
 
 The project contains automatic conversions for the following types.
 
-* application/json
-* application/x-json
-* application/hyperlambda
-* application/x-hyperlambda
-* application/www-form-urlencoded
-* application/x-www-form-urlencoded
+* `application/json`
+* `application/x-json`
+* `application/hyperlambda`
+* `application/x-hyperlambda`
+* `application/www-form-urlencoded`
+* `application/x-www-form-urlencoded`
 
 You can also convert a semantic lambda object to the correct _request_ content in a similar fashion, by instead
-of providing a value to your **[payload]** provide a lambda object such as illustrated below.
+of providing a value to your **[payload]** node provide a lambda object such as illustrated below.
 
 ```
 .userId:int:1
@@ -131,9 +131,14 @@ http.post:"https://jsonplaceholder.typicode.com/posts"
 The above will transform your payload to a JSON object automatically for you, and also unwrap any expressions
 found in your lambda object before JSON transformation is applied. Automatic transformation will only be applied
 if you've got a registered transformation function registered. If you want to extend the list of supported
-content types ot automatically transform to and from, you can use either `Magic.Http.AddRequestHandler` or
+content types to automatically transform back and forth to, you can use either `Magic.Http.AddRequestHandler` or
 `MagicHttp.AddResponseHandler` to add support for your own automatic transformation for both the request
-payload and the response content.
+payload and/or the response content.
+
+**Notice** - The **[payload]** node above must have a _null_ value, otherwise the slot will prioritise the value,
+and not attempt to transform from a semantic lambda object in any ways. Values in your **[payload]** will be
+transferred as is, and you can provide `byte[]` arrays, streams or strings as the value of your **[payload]**
+node.
 
 **Notice** - Both the URL encoded request transformer and the JSON request transformer will automatically
 evaluate expressions in your semantic **[payload]** object but this is _not_ true for the Hyperlambda request
