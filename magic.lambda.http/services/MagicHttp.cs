@@ -57,6 +57,9 @@ namespace magic.lambda.http.services
                 {
                     "application/x-www-form-urlencoded", RequestTransformers.TransformToUrlEncoded
                 },
+                {
+                    "multipart/form-data", RequestTransformers.MultipartFormData
+                },
             };
         
         // Response object to lambda converters, to semantically transform from a response object to a lambda object.
@@ -304,7 +307,23 @@ namespace magic.lambda.http.services
                     "application/json";
 
                 if (_requestTransformers.TryGetValue(contentType, out var functor))
-                    return functor(signaler, payloadNode, input.Name);
+                {
+                    // Invoking function responsible for creating payload.
+                    var result = functor(signaler, payloadNode, input.Name);
+
+                    // Checking if some sort of "structured" result was returned from request transformer.
+                    if (result is Node nodeResult)
+                    {
+                        var contentNode = nodeResult.Children.First(x => x.Name == "content");
+                        contentNode.UnTie();
+                        foreach (var idx in contentNode.Children)
+                        {
+                            headers[idx.Name] = idx.Get<string>();
+                        }
+                        return contentNode.Value;
+                    }
+                    return result;
+                }
 
                 // No transformer for specified Content-Type exists.
                 throw new HyperlambdaException($"I don't know how to transform a lambda object to Content-Type of '{contentType}'");

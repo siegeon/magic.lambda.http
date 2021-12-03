@@ -66,6 +66,17 @@ namespace magic.lambda.http.services.helpers
             return builder.ToString();
         }
 
+        /*
+         * Transforms a [payload] node into a URL encoded string and returns to caller.
+         */
+        internal static object MultipartFormData(ISignaler signaler, Node payloadNode, string slotName)
+        {
+            payloadNode.Value = "multipart/form-data";
+            payloadNode.Add(new Node("structured", true));
+            signaler.Signal("mime.create", payloadNode);
+            return payloadNode;
+        }
+
         #region [ -- Private helper methods -- ]
 
         /*
