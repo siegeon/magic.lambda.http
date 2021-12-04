@@ -5,6 +5,7 @@
 using System.Web;
 using System.Linq;
 using System.Text;
+using System.Collections.Generic;
 using magic.node;
 using magic.node.extensions;
 using magic.signals.contracts;
@@ -20,7 +21,11 @@ namespace magic.lambda.http.services.helpers
         /*
          * Transforms a a [payload] node into JSON string and returns to caller.
          */
-        internal static object TransformToJson(ISignaler signaler, Node payloadNode, string slotName)
+        internal static object TransformToJson(
+            ISignaler signaler,
+            Dictionary<string, string> headers,
+            Node payloadNode,
+            string slotName)
         {
             /*
              * Automatically [unwrap]'ing all nodes, since there are no reasons why you'd want
@@ -39,7 +44,11 @@ namespace magic.lambda.http.services.helpers
         /*
          * Transforms a [payload] node into a Hyperlambda string and returns to caller.
          */
-        internal static object TransformToHyperlambda(ISignaler signaler, Node payloadNode, string slotName)
+        internal static object TransformToHyperlambda(
+            ISignaler signaler,
+            Dictionary<string, string> headers,
+            Node payloadNode,
+            string slotName)
         {
             // Using Hyperlambda slot to transform nodes to string.
             signaler.Signal("lambda2hyper", payloadNode);
@@ -49,7 +58,11 @@ namespace magic.lambda.http.services.helpers
         /*
          * Transforms a [payload] node into a URL encoded string and returns to caller.
          */
-        internal static object TransformToUrlEncoded(ISignaler signaler, Node payloadNode, string slotName)
+        internal static object TransformToUrlEncoded(
+            ISignaler signaler,
+            Dictionary<string, string> headers,
+            Node payloadNode,
+            string slotName)
         {
             // Creating a URL encoded request payload body.
             var builder = new StringBuilder();
@@ -69,12 +82,17 @@ namespace magic.lambda.http.services.helpers
         /*
          * Transforms a [payload] node into a URL encoded string and returns to caller.
          */
-        internal static object MultipartFormData(ISignaler signaler, Node payloadNode, string slotName)
+        internal static object MultipartFormData(
+            ISignaler signaler,
+            Dictionary<string, string> headers,
+            Node payloadNode,
+            string slotName)
         {
             payloadNode.Value = "multipart/form-data";
             payloadNode.Add(new Node("structured", true));
             signaler.Signal("mime.create", payloadNode);
-            return payloadNode;
+            headers["Content-Type"] = payloadNode.Children.First(x => x.Name == "Content-Type").Get<string>();
+            return payloadNode.Children.First(x => x.Name == "content").Value;
         }
 
         #region [ -- Private helper methods -- ]

@@ -36,8 +36,8 @@ namespace magic.lambda.http.services
             };
         
         // Lambda to request object converters, to semantically transform from a lambda object to an object value of some sort.
-        readonly static Dictionary<string, Func<ISignaler, Node, string, object>> _requestTransformers =
-            new Dictionary<string, Func<ISignaler, Node, string, object>>
+        readonly static Dictionary<string, Func<ISignaler, Dictionary<string, string>, Node, string, object>> _requestTransformers =
+            new Dictionary<string, Func<ISignaler, Dictionary<string, string>, Node, string, object>>
             {
                 {
                     "application/json", RequestTransformers.TransformToJson
@@ -158,7 +158,9 @@ namespace magic.lambda.http.services
         /// </summary>
         /// <param name="contentType">Content-Type to handle</param>
         /// <param name="functor">Function to create a request object for Content-Type</param>
-        public static void AddRequestHandler(string contentType, Func<ISignaler, Node, string, object> functor)
+        public static void AddRequestHandler(
+            string contentType,
+            Func<ISignaler, Dictionary<string, string>, Node, string, object> functor)
         {
             _requestTransformers[contentType] = functor;
         }
@@ -169,7 +171,9 @@ namespace magic.lambda.http.services
         /// </summary>
         /// <param name="contentType">Content-Type to handle</param>
         /// <param name="functor">Function to create a lambda object for Content-Type</param>
-        public static void AddResponseHandler(string contentType, Func<ISignaler, HttpContent, Task<Node>> functor)
+        public static void AddResponseHandler(
+            string contentType,
+            Func<ISignaler, HttpContent, Task<Node>> functor)
         {
             _responseTransformers[contentType] = functor;
         }
@@ -307,23 +311,7 @@ namespace magic.lambda.http.services
                     "application/json";
 
                 if (_requestTransformers.TryGetValue(contentType, out var functor))
-                {
-                    // Invoking function responsible for creating payload.
-                    var result = functor(signaler, payloadNode, input.Name);
-
-                    // Checking if some sort of "structured" result was returned from request transformer.
-                    if (result is Node nodeResult)
-                    {
-                        var contentNode = nodeResult.Children.First(x => x.Name == "content");
-                        contentNode.UnTie();
-                        foreach (var idx in contentNode.Children)
-                        {
-                            headers[idx.Name] = idx.Get<string>();
-                        }
-                        return contentNode.Value;
-                    }
-                    return result;
-                }
+                    return functor(signaler, headers, payloadNode, input.Name);
 
                 // No transformer for specified Content-Type exists.
                 throw new HyperlambdaException($"I don't know how to transform a lambda object to Content-Type of '{contentType}'");
