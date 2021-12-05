@@ -4,8 +4,10 @@
 
 using System.Web;
 using System.Linq;
+using System.Text;
 using System.Net.Http;
 using System.Threading.Tasks;
+using MimeKit;
 using magic.node;
 using magic.signals.contracts;
 

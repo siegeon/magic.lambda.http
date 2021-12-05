@@ -35,7 +35,7 @@ namespace magic.lambda.http.services.helpers
              */
             foreach (var idx in payloadNode.Children)
             {
-                Unwrap(idx, slotName, true);
+                Unwrap(idx, slotName);
             }
 
             // Using JSON slot to transform nodes to JSON.
@@ -99,15 +99,13 @@ namespace magic.lambda.http.services.helpers
             signaler.Signal(".mime.create", payloadNode);
             var entity = payloadNode.Get<MimeEntity>();
 
-            // Figuring out correct Content-Type of MIME multipart, including its boundary parts, and modifying headers collection.
-            var contentType = new StringBuilder(entity.ContentType.MimeType);
-            foreach (var idx in entity.ContentType.Parameters)
+            // Attaching headers to HTTP envelope.
+            foreach (var idxHeader in entity.Headers)
             {
-                contentType.Append("; ").Append(idx.Name).Append("=\"").Append(idx.Value + "\"");
+                headers[idxHeader.Field] = idxHeader.Value;
             }
-            headers["Content-Type"] = contentType.ToString();
 
-            // Serialising MIME entity *without* its headers and returning it to caller.
+            // Serialising MIME entity without its headers and returning it to caller, making sure we get CR/LF sequence correctly applied.
             using (var stream = new MemoryStream())
             {
                 entity.WriteTo(new FormatOptions { MaxLineLength = 100, NewLineFormat = NewLineFormat.Dos }, stream, true);
@@ -147,7 +145,7 @@ namespace magic.lambda.http.services.helpers
         /*
          * Helper method to [unwrap] all nodes passed in as a lambda object.
          */
-        static void Unwrap(Node node, string slotName, bool recurse)
+        static void Unwrap(Node node, string slotName)
         {
             // Checking if value of node is an expression, and if so, [unwrap]'ign it.
             if (node.Value is Expression)
@@ -158,13 +156,10 @@ namespace magic.lambda.http.services.helpers
                 node.Value = exp.FirstOrDefault()?.Value;
             }
 
-            // Recursively iterating through all children of currently iterated node, but only if caller wants us to.
-            if (recurse)
+            // Recursively iterating through all children of currently iterated node.
+            foreach (var idx in node.Children)
             {
-                foreach (var idx in node.Children)
-                {
-                    Unwrap(idx, slotName, recurse);
-                }
+                Unwrap(idx, slotName);
             }
         }
 
