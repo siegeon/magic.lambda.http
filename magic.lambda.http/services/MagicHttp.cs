@@ -8,6 +8,7 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using MimeKit;
 using magic.node;
 using magic.node.extensions;
 using magic.signals.contracts;
@@ -269,17 +270,13 @@ namespace magic.lambda.http.services
             Node input,
             Dictionary<string, string> headers)
         {
-            // Buffer to hold content
-            object content = null;
-
             // Using [payload] node if available.
             var payloadNode = input.Children.FirstOrDefault(x => x.Name == "payload");
 
             // Prioritising [payload] argument.
-            if (payloadNode != null)
-                content = GetRequestContentContent(signaler, input, payloadNode, headers);
-            else
-                content = GetRequestFileContent(signaler, input);
+            var content = payloadNode != null ?
+                GetRequestContentContent(signaler, input, payloadNode, headers) :
+                GetRequestFileContent(signaler, input);
 
             // Making sure we support our 3 primary content types.
             if (content is Stream stream)
@@ -307,10 +304,10 @@ namespace magic.lambda.http.services
 
                 // Figuring out Content-Type of request payload to make sure we correctly transform into the specified value.
                 var contentType = headers.ContainsKey("Content-Type") ?
-                    headers["Content-Type"]?.Split(';').First().Trim() ?? "application/json" :
-                    "application/json";
+                    ContentType.Parse(headers["Content-Type"]) :
+                    ContentType.Parse("application/json");
 
-                if (_requestTransformers.TryGetValue(contentType, out var functor))
+                if (_requestTransformers.TryGetValue(contentType.MimeType, out var functor))
                     return functor(signaler, headers, payloadNode, input.Name);
 
                 // No transformer for specified Content-Type exists.
@@ -411,7 +408,7 @@ namespace magic.lambda.http.services
                     foreach (var idx in content.Headers)
                     {
                         if (idx.Key.ToLowerInvariant() == "content-type")
-                            contentType = idx.Value.First().Split(';').First();
+                            contentType = ContentType.Parse(idx.Value.First()).MimeType;
                         headers.Add(new Node(idx.Key, string.Join(", ", idx.Value)));
                     }
                     result.Add(headers);
@@ -419,17 +416,11 @@ namespace magic.lambda.http.services
 
                 // Checking if caller wants to automatically convert and if we've got response converters registered for Content-Type.
                 if (convert && _responseTransformers.TryGetValue(contentType, out var functor))
-                {
                     result.Add(await functor(signaler, content));
-                }
+                else if (contentType.StartsWith("text/"))
+                    result.Add(new Node("content", await content.ReadAsStringAsync()));
                 else
-                {
-                    // Checking if this MIME type starts with "text/" something, at which point we treat it as text.
-                    if (contentType.StartsWith("text/"))
-                        result.Add(new Node("content", await content.ReadAsStringAsync()));
-                    else
-                        result.Add(new Node("content", await content.ReadAsByteArrayAsync()));
-                }
+                    result.Add(new Node("content", await content.ReadAsByteArrayAsync()));
             }
         }
 
