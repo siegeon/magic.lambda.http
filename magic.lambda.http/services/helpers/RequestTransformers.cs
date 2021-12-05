@@ -100,12 +100,12 @@ namespace magic.lambda.http.services.helpers
             var entity = payloadNode.Get<MimeEntity>();
 
             // Figuring out correct Content-Type of MIME multipart, including its boundary parts, and modifying headers collection.
-            var contentType = entity.ContentType.MimeType;
+            var contentType = new StringBuilder(entity.ContentType.MimeType);
             foreach (var idx in entity.ContentType.Parameters)
             {
-                contentType += "; " + idx.Name + "=\"" + idx.Value + "\"";
+                contentType.Append("; ").Append(idx.Name).Append("=\"").Append(idx.Value + "\"");
             }
-            headers["Content-Type"] = contentType;
+            headers["Content-Type"] = contentType.ToString();
 
             // Serialising MIME entity *without* its headers and returning it to caller.
             using (var stream = new MemoryStream())
