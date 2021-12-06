@@ -99,7 +99,7 @@ namespace magic.lambda.http.services.helpers
             signaler.Signal(".mime.create", payloadNode);
             var entity = payloadNode.Get<MimeEntity>();
 
-            // Attaching headers to HTTP envelope.
+            // Attaching MIME envelope headers to HTTP envelope.
             foreach (var idxHeader in entity.Headers)
             {
                 headers[idxHeader.Field] = idxHeader.Value;

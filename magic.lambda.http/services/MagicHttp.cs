@@ -35,7 +35,7 @@ namespace magic.lambda.http.services
                 { "Content-Type", "application/json" },
                 { "Accept", "application/json" },
             };
-        
+
         // Lambda to request object converters, to semantically transform from a lambda object to an object value of some sort.
         readonly static Dictionary<string, Func<ISignaler, Dictionary<string, string>, Node, string, object>> _requestTransformers =
             new Dictionary<string, Func<ISignaler, Dictionary<string, string>, Node, string, object>>
@@ -138,7 +138,7 @@ namespace magic.lambda.http.services
 
                     default:
 
-                        // Content request, implying 'PUT', 'POST' or 'DELETE' request.
+                        // Payload type of request, implying 'PUT', 'POST' or 'PATCH'.
                         using (var content = GetRequestContent(signaler, input, headers))
                         {
                             AddContentHeaders(content, headers);
@@ -222,7 +222,10 @@ namespace magic.lambda.http.services
             }
 
             // Applying Bearer token if specified.
-            var token = input.Children.FirstOrDefault(x => x.Name == "token")?.GetEx<string>();
+            var token = input.Children
+                .FirstOrDefault(x => x.Name == "token")?
+                .GetEx<string>();
+
             if (token != null)
                 headers["Authorization"] = $"Bearer {token}";
 
@@ -281,8 +284,10 @@ namespace magic.lambda.http.services
             // Making sure we support our 3 primary content types.
             if (content is Stream stream)
                 return new StreamContent(stream);
+
             if (content is byte[] bytes)
                 return new ByteArrayContent(bytes);
+
             return new StringContent(content as string);
         }
 
