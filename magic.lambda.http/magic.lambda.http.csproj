@@ -10,7 +10,7 @@
     <Description>HTTP lambda helpers for Magic, allowing you to invoke HTTP REST endpoints using Magic and Hyperlambda. To use package go to https://polterguy.github.io</Description>
     <PackageProjectUrl>https://github.com/polterguy/magic.lambda.http</PackageProjectUrl>
     <PackOnBuild>true</PackOnBuild>
-    <PackageVersion>10.0.0</PackageVersion>
+    <PackageVersion>10.0.2</PackageVersion>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
     <RepositoryType>git</RepositoryType>
     <RepositoryUrl>https://github.com/polterguy/magic.lambda.http.git</RepositoryUrl>
@@ -47,7 +47,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MimeKit" Version="2.15.1" />
+    <PackageReference Include="MimeKit" Version="3.0.0" />
     <PackageReference Include="magic.node.extensions" Version="9.9.9" />
     <PackageReference Include="magic.signals.contracts" Version="9.9.9" />
   </ItemGroup>

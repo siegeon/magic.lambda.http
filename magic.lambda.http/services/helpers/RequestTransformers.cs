@@ -97,50 +97,30 @@ namespace magic.lambda.http.services.helpers
             // Invoking slot responsible for creating our MIME entity.
             payloadNode.Value = headers["Content-Type"];
             signaler.Signal(".mime.create", payloadNode);
-            var entity = payloadNode.Get<MimeEntity>();
-
-            // Attaching MIME envelope headers to HTTP envelope.
-            foreach (var idxHeader in entity.Headers)
+            using (var entity = payloadNode.Get<MimeEntity>())
             {
-                headers[idxHeader.Field] = idxHeader.Value;
-            }
-
-            // Serialising MIME entity without its headers and returning it to caller, making sure we get CR/LF sequence correctly applied.
-            using (var stream = new MemoryStream())
-            {
-                entity.WriteTo(new FormatOptions { MaxLineLength = 100, NewLineFormat = NewLineFormat.Dos }, stream, true);
-                stream.Position = 0;
-
-                // House cleaning.
-                DisposeEntity(entity);
-
-                // Returning string wrapping entire MIME entity to caller.
-                using (var reader = new StreamReader(stream))
+                // Attaching MIME envelope headers to HTTP envelope.
+                foreach (var idxHeader in entity.Headers)
                 {
-                    return reader.ReadToEnd();
+                    headers[idxHeader.Field] = idxHeader.Value;
+                }
+
+                // Serialising MIME entity without its headers and returning it to caller, making sure we get CR/LF sequence correctly applied.
+                using (var stream = new MemoryStream())
+                {
+                    entity.WriteTo(new FormatOptions { MaxLineLength = 100, NewLineFormat = NewLineFormat.Dos }, stream, true);
+                    stream.Position = 0;
+
+                    // Returning string wrapping entire MIME entity to caller.
+                    using (var reader = new StreamReader(stream))
+                    {
+                        return reader.ReadToEnd();
+                    }
                 }
             }
         }
 
         #region [ -- Private helper methods -- ]
-
-        /*
-         * Internal helper method to dispose all streams inside all entities.
-         */
-        static void DisposeEntity(MimeEntity entity)
-        {
-            if (entity is MimePart part)
-            {
-                part.Content?.Stream?.Dispose();
-            }
-            else if (entity is Multipart multi)
-            {
-                foreach (var idx in multi)
-                {
-                    DisposeEntity(idx);
-                }
-            }
-        }
 
         /*
          * Helper method to [unwrap] all nodes passed in as a lambda object.
