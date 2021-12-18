@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using magic.node;
+using magic.node.services;
 using magic.node.contracts;
 using magic.signals.services;
 using magic.signals.contracts;
@@ -66,6 +67,8 @@ namespace magic.lambda.http.tests
             var types = new SignalsProvider(InstantiateAllTypes<ISlot>(services));
             services.AddTransient<ISignalsProvider>((svc) => types);
             services.AddTransient<IRootResolver, RootResolver>();
+            services.AddTransient<IFileService, FileService>();
+            services.AddTransient<IStreamService, StreamService>();
             services.AddTransient<IMagicHttp, MagicHttp>();
             var provider = services.BuildServiceProvider();
             return provider;
