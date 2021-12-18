@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using System.Collections.Generic;
 using MimeKit;
 using magic.node;
+using magic.node.contracts;
 using magic.node.extensions;
 using magic.signals.contracts;
 using magic.lambda.http.contracts;
@@ -87,16 +88,24 @@ namespace magic.lambda.http.services
             },
         };
 
-        // Dependency injected HttpClient instance.
         readonly HttpClient _client;
+        readonly IFileService _fileService;
+        readonly IStreamService _streamService;
 
         /// <summary>
         /// Creates an instance of your type.
         /// </summary>
         /// <param name="client">Actual HttpClient implementation</param>
-        public MagicHttp(HttpClient client)
+        /// <param name="fileService">Needed in case caller wants to pass in a file as an HTTP request content object</param>
+        /// <param name="streamService">Needed in case caller wants to pass in a file as an HTTP request content object</param>
+        public MagicHttp(
+            HttpClient client,
+            IFileService fileService,
+            IStreamService streamService)
         {
             _client = client;
+            _fileService = fileService;
+            _streamService = streamService;
         }
 
         /// <inheritdoc />
@@ -268,7 +277,7 @@ namespace magic.lambda.http.services
         /*
          * Creates an HTTP content object for HTTP invocations requiring such things (POST, PUT and PATCH).
          */
-        static HttpContent GetRequestContent(
+        HttpContent GetRequestContent(
             ISignaler signaler,
             Node input,
             Dictionary<string, string> headers)
@@ -329,7 +338,7 @@ namespace magic.lambda.http.services
         /*
          * Creates an HTTP content object wrapping a file.
          */
-        static object GetRequestFileContent(ISignaler signaler, Node input)
+        object GetRequestFileContent(ISignaler signaler, Node input)
         {
             // If no [content] was given we check if caller supplied a [filename] argument.
             var filename = input.Children.FirstOrDefault(x => x.Name == "filename")?.GetEx<string>();
@@ -340,8 +349,8 @@ namespace magic.lambda.http.services
             var rootFolderNode = new Node();
             signaler.Signal(".io.folder.root", rootFolderNode);
             var fullpath = rootFolderNode.Get<string>().TrimEnd('/') + "/" + filename.TrimStart('/');
-            if (File.Exists(fullpath))
-                return File.OpenRead(fullpath);
+            if (_fileService.Exists(fullpath))
+                return _streamService.OpenFile(fullpath);
 
             // File doesn't exist.
             throw new HyperlambdaException($"File supplied as [filename] argument to [{input.Name}] doesn't exist");
