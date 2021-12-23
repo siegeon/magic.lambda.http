@@ -90,6 +90,7 @@ namespace magic.lambda.http.services
 
         readonly HttpClient _client;
         readonly IFileService _fileService;
+        readonly IRootResolver _rootResolver;
         readonly IStreamService _streamService;
 
         /// <summary>
@@ -97,14 +98,17 @@ namespace magic.lambda.http.services
         /// </summary>
         /// <param name="client">Actual HttpClient implementation</param>
         /// <param name="fileService">Needed in case caller wants to pass in a file as an HTTP request content object</param>
+        /// <param name="rootResolver">Needed to resolve root path for dynamic files</param>
         /// <param name="streamService">Needed in case caller wants to pass in a file as an HTTP request content object</param>
         public MagicHttp(
             HttpClient client,
             IFileService fileService,
+            IRootResolver rootResolver,
             IStreamService streamService)
         {
             _client = client;
             _fileService = fileService;
+            _rootResolver = rootResolver;
             _streamService = streamService;
         }
 
@@ -346,11 +350,8 @@ namespace magic.lambda.http.services
                 throw new HyperlambdaException($"No [payload] or [filename] argument supplied to [{input.Name}]");
 
             // Caller supplied a [filename] argument, hence using it as a stream content object.
-            var rootFolderNode = new Node();
-            signaler.Signal(".io.folder.root", rootFolderNode);
-            var fullpath = rootFolderNode.Get<string>().TrimEnd('/') + "/" + filename.TrimStart('/');
-            if (_fileService.Exists(fullpath))
-                return _streamService.OpenFile(fullpath);
+            if (_fileService.Exists(_rootResolver.AbsolutePath(filename)))
+                return _streamService.OpenFile(_rootResolver.AbsolutePath(filename));
 
             // File doesn't exist.
             throw new HyperlambdaException($"File supplied as [filename] argument to [{input.Name}] doesn't exist");
