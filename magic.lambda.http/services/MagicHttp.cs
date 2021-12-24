@@ -292,7 +292,7 @@ namespace magic.lambda.http.services
             // Prioritising [payload] argument.
             var content = payloadNode != null ?
                 GetRequestContentContent(signaler, input, payloadNode, headers) :
-                GetRequestFileContent(signaler, input);
+                GetRequestFileContent(input);
 
             // Making sure we support our 3 primary content types.
             if (content is Stream stream)
@@ -342,7 +342,7 @@ namespace magic.lambda.http.services
         /*
          * Creates an HTTP content object wrapping a file.
          */
-        object GetRequestFileContent(ISignaler signaler, Node input)
+        object GetRequestFileContent(Node input)
         {
             // If no [content] was given we check if caller supplied a [filename] argument.
             var filename = input.Children.FirstOrDefault(x => x.Name == "filename")?.GetEx<string>();
