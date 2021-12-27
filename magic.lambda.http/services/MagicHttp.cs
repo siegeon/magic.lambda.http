@@ -210,35 +210,16 @@ namespace magic.lambda.http.services
                 .Children
                 .ToDictionary(lhs => lhs.Name, rhs => rhs.GetEx<string>()) ?? new Dictionary<string, string>();
 
-            // Applying default headers if no [headers] argument was supplied.
+            // Applying default headers that are used if no [headers] argument was supplied.
             if (headers.Count == 0)
-            {
-                switch (method.Method.ToLowerInvariant())
-                {
-                    case "get":
-                    case "delete":
-
-                        foreach (var idx in DEFAULT_HEADERS_EMPTY_REQUEST)
-                        {
-                            headers[idx.Key] = idx.Value;
-                        }
-                        break;
-
-                    default:
-
-                        foreach (var idx in DEFAULT_HEADERS_REQUEST)
-                        {
-                            headers[idx.Key] = idx.Value;
-                        }
-                        break;
-                }
-            }
+                AddDefaultRequestHeaders(headers, method);
 
             // Applying Bearer token if specified.
             var token = input.Children
                 .FirstOrDefault(x => x.Name == "token")?
                 .GetEx<string>();
 
+            // Checking if caller supplied a [token] argument.
             if (token != null)
                 headers["Authorization"] = $"Bearer {token}";
 
@@ -246,6 +227,48 @@ namespace magic.lambda.http.services
             var result = new HttpRequestMessage(method, new Uri(url));
 
             // Associating each non-content HTTP header with the request message.
+            AddRequestHeaders(headers, method, result);
+
+            // Returning result to caller.
+            return result;
+        }
+
+        /*
+         * Adds default HTTP request headers.
+         *
+         * These are HTTP headers used only if no explicit headers collection was specified by caller.
+         */
+        static void AddDefaultRequestHeaders(Dictionary<string, string> headers, HttpMethod method)
+        {
+            switch (method.Method.ToLowerInvariant())
+            {
+                case "get":
+                case "delete":
+
+                    foreach (var idx in DEFAULT_HEADERS_EMPTY_REQUEST)
+                    {
+                        headers[idx.Key] = idx.Value;
+                    }
+                    break;
+
+                default:
+
+                    foreach (var idx in DEFAULT_HEADERS_REQUEST)
+                    {
+                        headers[idx.Key] = idx.Value;
+                    }
+                    break;
+            }
+        }
+
+        /*
+         * Adds per invocation specified HTTP request CONTENT headers.
+         */
+        static void AddRequestHeaders(
+            Dictionary<string, string> headers,
+            HttpMethod method,
+            HttpRequestMessage result)
+        {
             foreach (var idx in headers.Keys)
             {
                 switch (idx)
@@ -275,7 +298,6 @@ namespace magic.lambda.http.services
                         break;
                 }
             }
-            return result;
         }
 
         /*
