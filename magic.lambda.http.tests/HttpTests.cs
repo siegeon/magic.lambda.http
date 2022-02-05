@@ -4,10 +4,16 @@
  */
 
 using System.Linq;
+using System.Net.Http;
+using System.Reflection.Metadata;
+using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
+using magic.lambda.http.services;
 using Xunit;
 using Newtonsoft.Json.Linq;
 using magic.node.extensions;
+using magic.node.extensions.hyperlambda;
+using Newtonsoft.Json;
 
 namespace magic.lambda.http.tests
 {
@@ -19,6 +25,7 @@ namespace magic.lambda.http.tests
             var lambda = Common.Evaluate(@"
 http.get:""https://jsonplaceholder.typicode.com/users/1""
 ");
+
             Assert.Equal(200, lambda.Children.First().Value);
             Assert.Equal(2, lambda.Children.First().Children.Count());
             Assert.Equal("headers", lambda.Children.First().Children.First().Name);
@@ -27,6 +34,34 @@ http.get:""https://jsonplaceholder.typicode.com/users/1""
             var json = JObject.Parse(lambda.Children.First().Children.Skip(1).First().Get<string>());
             Assert.NotNull(json);
         }
+
+        /// <summary>
+        ///     The purpose of this test is to ensure that typically documented formats for API gets are
+        ///     supported in hl.
+        /// </summary>
+        [Fact]
+        public void GeneratedRequest_ContainsExpectedHeaderValues()
+        {
+            //parse the node and get to the get value as we are only testing the ability to generate the desired HTTP request
+            var lambda = HyperlambdaParser.Parse(@"
+http.get:""https://jsonplaceholder.typicode.com/users/1""
+   headers
+      Content-Type: application/json
+      X-Access-Token: 123456789
+").Children.First(x => x.Name != string.Empty && !x.Name.StartsWith("."));
+
+            var request = MagicHttp.CreateRequestMessage(HttpMethod.Get, lambda, out var requestHeaders);
+            //Ensure that both desired headers are being requested. 
+            Assert.True(requestHeaders.Count == 2);
+            //Ensure that the generated http request object contains both headers
+            Assert.Equal("Method: GET, RequestUri: 'https://jsonplaceholder.typicode.com/users/1', Version: 1.1, Content: System.Net.Http.StringContent, Headers:\r\n{\r\n  X-Access-Token: 123456789\r\n  Content-Type: application/json\r\n}", 
+                request.ToString());
+
+            //Ensure that the "malformed (according to microsoft) http request can be used by the client to get a content result.
+            Assert.True(!string.IsNullOrWhiteSpace(new HttpClient().SendAsync(request).Result.Content.ToString()), "Ensure that the request can be processed");
+            
+        }
+
 
         [Fact]
         public void Throws_01()

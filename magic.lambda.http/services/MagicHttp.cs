@@ -8,6 +8,8 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using System.Net.Http.Headers;
+using System.Text;
 using MimeKit;
 using magic.node;
 using magic.node.contracts;
@@ -198,7 +200,7 @@ namespace magic.lambda.http.services
          * Creates an HTTP request message and returns to caller, correctly decorating
          * the HTTP headers of the message.
          */
-        static HttpRequestMessage CreateRequestMessage(
+        internal static HttpRequestMessage CreateRequestMessage(
             HttpMethod method,
             Node input,
             out Dictionary<string, string> headers)
@@ -267,7 +269,7 @@ namespace magic.lambda.http.services
         static void AddRequestHeaders(
             Dictionary<string, string> headers,
             HttpMethod method,
-            HttpRequestMessage result)
+            HttpRequestMessage request)
         {
             foreach (var idx in headers.Keys)
             {
@@ -282,8 +284,19 @@ namespace magic.lambda.http.services
                     case "Content-MD5":
                     case "Content-Range":
                     case "Content-Type":
+                        // .Net tries to force you to obey certain standards, namely that the Content-Type header can
+                        // only be specified on requests that have content (e.g. POST, PUT, etc.). With that said, many
+                        // APIs (such as the LiquidFiles, Shopify, Firmwater) requires setting the Content-Type header
+                        // for a GET request. .Net will not allow setting this header on the request itself -- even
+                        // using TryAddWithoutValidation.
+                        request.Content = new StringContent(string.Empty, Encoding.UTF8, "application/json");
+                        request.Content.Headers.Clear();
+                        request.Content.Headers.Add("Content-Type", headers[idx]);
+                        break;
                     case "Expires":
                     case "Last-Modified":
+
+
 
                         // These HTTP headers we simply ignore, since they're added to the content object later.
                         // However, if such headers are added to GET or DELETE invocation, it's considered a bug.
@@ -294,7 +307,7 @@ namespace magic.lambda.http.services
                     default:
 
                         // These are the only HTTP headers we're interested in adding to the request message itself.
-                        result.Headers.Add(idx, headers[idx]);
+                        request.Headers.Add(idx, headers[idx]);
                         break;
                 }
             }
