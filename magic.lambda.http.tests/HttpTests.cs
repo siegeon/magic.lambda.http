@@ -5,15 +5,12 @@
 
 using System.Linq;
 using System.Net.Http;
-using System.Reflection.Metadata;
-using System.Runtime.InteropServices.ComTypes;
 using System.Threading.Tasks;
 using magic.lambda.http.services;
 using Xunit;
 using Newtonsoft.Json.Linq;
 using magic.node.extensions;
 using magic.node.extensions.hyperlambda;
-using Newtonsoft.Json;
 
 namespace magic.lambda.http.tests
 {
